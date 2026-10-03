@@ -1,0 +1,3239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ShopEase - a single-file demo storefront with products, cart, checkout, reviews, wishlist and an admin panel.">
+<meta name="color-scheme" content="light dark">
+<title>ShopEase - Everyday gear, delivered fast</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128722;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* ============================================================================
+   1. DESIGN TOKENS
+   Two themes driven by [data-theme]. Every colour, radius, shadow and space in
+   the app resolves to one of these variables so themes stay in sync.
+   ========================================================================== */
+:root{
+  --bg:#eef1f9; --bg-grad:radial-gradient(1200px 600px at 10% -10%,#dfe6ff 0%,transparent 60%);
+  --card:#ffffff; --card-2:#f6f8ff; --ink:#131a33; --ink-2:#38425f; --mut:#667190;
+  --line:#e2e7f3; --line-2:#cfd7ea;
+  --ac:#2d3cff; --ac-2:#5563ff; --ac-soft:#e8ebff; --ac-ink:#1b25b8; --on-ac:#ffffff;
+  --gold:#ffc857; --gold-soft:#fff4d6; --ok:#0f9d58; --ok-soft:#e3f7ed;
+  --warn:#c2700a; --warn-soft:#fdf1de; --bad:#d62f4b; --bad-soft:#fdeaee;
+  --sh-1:0 1px 2px rgba(16,24,54,.06),0 1px 3px rgba(16,24,54,.06);
+  --sh-2:0 6px 16px rgba(16,24,54,.08),0 2px 6px rgba(16,24,54,.05);
+  --sh-3:0 18px 40px rgba(16,24,54,.14),0 4px 12px rgba(16,24,54,.08);
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:28px; --r-pill:999px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px;
+  --nav-h:64px; --maxw:1240px; --t-fast:.14s; --t:.24s; --t-slow:.42s;
+  --ease:cubic-bezier(.2,.7,.3,1);
+}
+:root[data-theme=dark]{
+  --bg:#0b1020; --bg-grad:radial-gradient(1200px 600px at 10% -10%,#1a2246 0%,transparent 60%);
+  --card:#151c33; --card-2:#1c2440; --ink:#eef1ff; --ink-2:#c3cbe6; --mut:#95a1c4;
+  --line:#25304f; --line-2:#33406a;
+  --ac:#8090ff; --ac-2:#9aa6ff; --ac-soft:#212a58; --ac-ink:#c3cbff; --on-ac:#0b1020;
+  --gold:#ffcf6b; --gold-soft:#3a3016; --ok:#4ade9b; --ok-soft:#12301f;
+  --warn:#f0b45f; --warn-soft:#33260f; --bad:#ff7b90; --bad-soft:#3a1520;
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 8px 20px rgba(0,0,0,.45); --sh-3:0 20px 50px rgba(0,0,0,.6);
+}
+
+/* ============================================================================
+   2. RESET AND BASE
+   ========================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 16px)}
+body{
+  margin:0;min-height:100vh;background:var(--bg);background-image:var(--bg-grad);
+  background-attachment:fixed;color:var(--ink);
+  font:400 16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1,h2,h3,h4{margin:0 0 var(--sp-2);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+h1{font-size:clamp(1.9rem,5vw,3.1rem)} h2{font-size:clamp(1.3rem,3vw,1.75rem)} h3{font-size:1.1rem}
+p{margin:0 0 var(--sp-3)}
+a{color:var(--ac-ink);text-underline-offset:3px}
+img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:3px solid var(--ac-2);outline-offset:2px;border-radius:var(--r-xs)}
+::selection{background:var(--ac-soft);color:var(--ac-ink)}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:fixed;top:-100px;left:12px;z-index:200;background:var(--ac);color:var(--on-ac);padding:10px 16px;border-radius:0 0 var(--r-sm) var(--r-sm);font-weight:600}
+.skip:focus{top:0}
+
+/* ============================================================================
+   3. PRIMITIVES: buttons, inputs, chips, badges
+   ========================================================================== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 18px;border-radius:var(--r-sm);border:1px solid var(--line-2);
+  background:var(--card);color:var(--ink);font-weight:600;font-size:.95rem;
+  transition:transform var(--t-fast) var(--ease),background var(--t-fast),border-color var(--t-fast),box-shadow var(--t-fast),opacity var(--t-fast);
+  white-space:nowrap;text-decoration:none;
+}
+.btn:hover{border-color:var(--ac);background:var(--ac-soft);color:var(--ac-ink)}
+.btn:active{transform:translateY(1px)}
+.btn.p{background:var(--ac);border-color:var(--ac);color:var(--on-ac);box-shadow:var(--sh-1)}
+.btn.p:hover{background:var(--ac-2);border-color:var(--ac-2);color:var(--on-ac);filter:none}
+.btn.g{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.g:hover{background:var(--card-2);color:var(--ink)}
+.btn.d{color:var(--bad);border-color:var(--bad-soft);background:var(--bad-soft)}
+.btn.d:hover{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn.sm{padding:6px 12px;font-size:.85rem;border-radius:var(--r-xs)}
+.btn.lg{padding:14px 26px;font-size:1.05rem;border-radius:var(--r-md)}
+.btn.full{width:100%}
+.btn[disabled],.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn .ic{font-size:1.05em;line-height:1}
+.ia{ /* square icon button */
+  width:38px;height:38px;padding:0;border-radius:var(--r-sm);border:1px solid var(--line-2);
+  background:var(--card);display:inline-flex;align-items:center;justify-content:center;font-size:1rem;
+  transition:background var(--t-fast),border-color var(--t-fast),color var(--t-fast)
+}
+.ia:hover{background:var(--ac-soft);border-color:var(--ac);color:var(--ac-ink)}
+.ia.on{background:var(--bad);border-color:var(--bad);color:#fff}
+
+label{display:block;font-weight:600;font-size:.85rem;margin:0 0 6px;color:var(--ink-2)}
+input,select,textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  background:var(--card);color:var(--ink);transition:border-color var(--t-fast),box-shadow var(--t-fast)
+}
+input:hover,select:hover,textarea:hover{border-color:var(--ac-2)}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-soft)}
+input[type=range]{padding:0;border:0;box-shadow:none;accent-color:var(--ac);background:transparent}
+textarea{resize:vertical;min-height:80px}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),linear-gradient(135deg,var(--mut) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.field{margin-bottom:var(--sp-4)}
+.field .hint{color:var(--mut);font-size:.8rem;margin-top:5px}
+.err{color:var(--bad);font-size:.85rem;font-weight:600;min-height:1.2em;margin-top:var(--sp-2)}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:0 var(--sp-3)}
+
+.chip{
+  padding:7px 15px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--card);
+  font-size:.88rem;font-weight:600;transition:all var(--t-fast) var(--ease)
+}
+.chip:hover{border-color:var(--ac);color:var(--ac-ink)}
+.chip.on{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.seg{display:inline-flex;background:var(--card-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:3px}
+.seg button{padding:6px 14px;border-radius:var(--r-pill);font-size:.85rem;font-weight:600;color:var(--mut);transition:all var(--t-fast)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
+
+.tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--r-pill);font-size:.75rem;font-weight:700;letter-spacing:.01em}
+.tag.ok{background:var(--ok-soft);color:var(--ok)} .tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)} .tag.info{background:var(--ac-soft);color:var(--ac-ink)}
+.tag.gold{background:var(--gold-soft);color:#8a5a00}
+:root[data-theme=dark] .tag.gold{color:var(--gold)}
+.badge{background:var(--gold);color:#14213d;border-radius:var(--r-pill);padding:0 7px;font-size:.78rem;font-weight:800;margin-left:2px}
+
+/* ============================================================================
+   4. HEADER / NAVIGATION
+   ========================================================================== */
+.nav{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--card) 88%,transparent);
+  backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);
+  border-bottom:1px solid var(--line);box-shadow:var(--sh-1)}
+.navin{max-width:var(--maxw);margin:0 auto;padding:10px 16px;display:flex;gap:var(--sp-3);align-items:center}
+.brand{display:flex;align-items:center;gap:9px;font-family:'Bricolage Grotesque',system-ui,sans-serif;
+  font-weight:800;font-size:1.32rem;letter-spacing:-.02em;color:var(--ink);flex:none}
+.brand .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--ac),#8b5cf6);
+  display:grid;place-items:center;font-size:17px;box-shadow:var(--sh-1)}
+.brand em{font-style:normal;color:var(--ac)}
+.searchwrap{position:relative;flex:1;min-width:150px;max-width:560px}
+#q{padding-left:38px;border-radius:var(--r-pill);background:var(--card-2)}
+#q::-webkit-search-cancel-button{cursor:pointer}
+.sicon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none;font-size:.95rem}
+.sug{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:50;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-md);box-shadow:var(--sh-3);overflow:hidden;padding:6px;max-height:min(60vh,380px);overflow-y:auto}
+.sug button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:var(--r-sm);text-align:left}
+.sug button:hover,.sug button[aria-selected=true]{background:var(--ac-soft)}
+.sug .se{font-size:1.3rem;width:26px;text-align:center;flex:none}
+.sug .sn{flex:1;min-width:0}
+.sug .sn b{display:block;font-weight:600;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug .sn span{color:var(--mut);font-size:.78rem}
+.sug mark{background:var(--gold-soft);color:inherit;border-radius:3px;padding:0 1px}
+#navr{display:flex;gap:6px;align-items:center;flex:none}
+.cartbtn{position:relative}
+.cartbtn .badge{position:absolute;top:-7px;right:-6px;margin:0;box-shadow:var(--sh-1);border:2px solid var(--card)}
+
+/* ============================================================================
+   5. LAYOUT PRIMITIVES
+   ========================================================================== */
+main{max-width:var(--maxw);width:100%;margin:0 auto;padding:var(--sp-5) 16px var(--sp-7);flex:1}
+main:focus{outline:0}
+.sec{margin-bottom:var(--sp-6)}
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);margin-bottom:var(--sp-3);flex-wrap:wrap}
+.shead h2,.shead h3{margin:0}
+.shead p{color:var(--mut);font-size:.9rem;margin:4px 0 0}
+.row{display:flex;gap:var(--sp-3);align-items:center}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.stack>*+*{margin-top:var(--sp-3)}
+.mut{color:var(--mut);font-size:.9rem}
+.tiny{font-size:.78rem;color:var(--mut)}
+.strong{font-weight:700}
+.center{text-align:center}
+.price{font-weight:800;font-size:1.15rem;letter-spacing:-.02em}
+.wide{width:100%}
+.strike{text-decoration:line-through;color:var(--mut);font-weight:500;font-size:.9rem}
+.hide{display:none!important}
+
+/* ============================================================================
+   6. HERO
+   ========================================================================== */
+.hero{position:relative;overflow:hidden;border-radius:var(--r-xl);padding:clamp(26px,5vw,54px);
+  background:linear-gradient(125deg,var(--ac) 0%,#6d3bf5 55%,#a855f7 100%);color:#fff;
+  box-shadow:var(--sh-3);margin-bottom:var(--sp-5)}
+.hero h1{color:#fff;max-width:16ch;margin-bottom:12px}
+.hero p{color:rgba(255,255,255,.9);max-width:46ch;font-size:1.05rem;margin-bottom:var(--sp-4)}
+.hero .btn{background:#fff;color:#1b25b8;border:0}
+.hero .btn.g{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.hero .btn:hover{background:var(--gold);color:#14213d;border-color:transparent}
+.hero::after{content:'';position:absolute;right:-90px;top:-90px;width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.28),transparent 62%);pointer-events:none}
+.hero .stats{display:flex;gap:var(--sp-5);flex-wrap:wrap;margin-top:var(--sp-5)}
+.hero .stats div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:var(--r-md);padding:8px 14px}
+.hero .stats b{display:block;font-size:1.25rem}
+.hero .stats span{font-size:.78rem;opacity:.85}
+
+.promo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-5)}
+.promo div{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;
+  display:flex;gap:12px;align-items:center;box-shadow:var(--sh-1)}
+.promo b{display:block;font-size:.95rem}
+.promo span{color:var(--mut);font-size:.82rem}
+.promo .pe{font-size:1.6rem}
+
+/* ============================================================================
+   7. SHOP: filter rail + results
+   ========================================================================== */
+.shop{display:grid;grid-template-columns:250px 1fr;gap:var(--sp-5);align-items:start}
+.filters{position:sticky;top:calc(var(--nav-h) + 16px);background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:var(--sp-4);box-shadow:var(--sh-1);max-height:calc(100vh - var(--nav-h) - 40px);overflow:auto}
+.filters h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:0 0 10px}
+.fgroup{padding-bottom:var(--sp-4);margin-bottom:var(--sp-4);border-bottom:1px solid var(--line)}
+.fgroup:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.fchips{display:flex;flex-wrap:wrap;gap:6px}
+.fchips .chip{padding:5px 12px;font-size:.82rem}
+.flist{max-height:190px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.fopt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r-xs);font-size:.88rem;cursor:pointer}
+.fopt:hover{background:var(--card-2)}
+.fopt input{width:16px;height:16px;flex:none;accent-color:var(--ac);margin:0}
+.fopt .n{margin-left:auto;color:var(--mut);font-size:.78rem}
+.rangerow{display:flex;gap:10px;align-items:center;margin-bottom:var(--sp-2)}
+.rangerow output{font-variant-numeric:tabular-nums;font-weight:700;font-size:.85rem;min-width:52px}
+.tools{display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.tools select{width:auto;min-width:150px}
+.activef{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.activef .chip{padding:4px 8px 4px 12px;font-size:.8rem;display:inline-flex;gap:6px;align-items:center;background:var(--ac-soft);border-color:var(--ac);color:var(--ac-ink)}
+.resultbar{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-3)}
+
+/* ============================================================================
+   8. PRODUCT GRID + CARDS
+   ========================================================================== */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-4)}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  overflow:hidden;display:flex;flex-direction:column;transition:transform var(--t) var(--ease),box-shadow var(--t),border-color var(--t)}
+.card:hover{transform:translateY(-4px);box-shadow:var(--sh-2);border-color:var(--line-2)}
+.card:focus-within{border-color:var(--ac)}
+.media{position:relative;display:grid;place-items:center;aspect-ratio:4/3;font-size:3.4rem;width:100%;
+  background:linear-gradient(160deg,var(--card-2),var(--ac-soft));border:0;transition:filter var(--t)}
+.media:hover{filter:brightness(1.04)}
+.media img{width:100%;height:100%;object-fit:cover}
+.flag{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;z-index:2}
+.fav{position:absolute;top:8px;right:8px;z-index:2;width:34px;height:34px;border-radius:50%;border:0;
+  background:color-mix(in srgb,var(--card) 86%,transparent);box-shadow:var(--sh-1);font-size:1rem;display:grid;place-items:center;transition:transform var(--t-fast) var(--ease)}
+.fav:hover{transform:scale(1.12)}
+.fav.on{background:var(--bad);color:#fff}
+.cb{padding:var(--sp-3) var(--sp-4) var(--sp-4);display:flex;flex-direction:column;gap:5px;flex:1}
+.cb .nm{font-weight:700;line-height:1.3}
+.cb .mt{font-size:.8rem;color:var(--mut)}
+.cb .ft{margin-top:auto;padding-top:var(--sp-3);display:flex;gap:8px;align-items:center}
+.cb .ft .btn{flex:1}
+.stars{display:inline-flex;align-items:center;gap:3px;font-size:.82rem;color:var(--warn);font-weight:700}
+.stars .s{letter-spacing:-1px}
+
+/* list variant */
+.grid.list{grid-template-columns:1fr}
+.grid.list .card{flex-direction:row}
+.grid.list .media{width:150px;flex:none;aspect-ratio:auto;font-size:2.6rem}
+.grid.list .cb{padding:var(--sp-4) var(--sp-5)}
+.grid.list .desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mut);font-size:.88rem}
+@media(max-width:640px){.grid.list .card{flex-direction:column}.grid.list .media{width:100%;aspect-ratio:4/3}}
+
+/* rails */
+.rail{display:flex;gap:var(--sp-3);overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+.rail>*{flex:0 0 148px;scroll-snap-align:start}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px;text-align:left;
+  display:flex;flex-direction:column;gap:5px;transition:transform var(--t) var(--ease),box-shadow var(--t)}
+.rcard:hover{transform:translateY(-3px);box-shadow:var(--sh-2)}
+.rcard .re{font-size:2rem;text-align:center;padding:10px;background:var(--card-2);border-radius:var(--r-sm)}
+.rcard b{font-size:.88rem;line-height:1.3}
+
+/* ============================================================================
+   9. DRAWER (cart) + SCRIM
+   ========================================================================== */
+#scrim{position:fixed;inset:0;background:rgba(10,15,30,.5);z-index:29;opacity:0;pointer-events:none;transition:opacity var(--t)}
+#scrim.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(430px,100%);background:var(--card);z-index:31;
+  transform:translateX(105%);transition:transform var(--t-slow) var(--ease);display:flex;flex-direction:column;
+  padding:var(--sp-4);border-left:1px solid var(--line);box-shadow:var(--sh-3)}
+#drawer.open{transform:none}
+#drawer header{display:flex;align-items:center;justify-content:space-between;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line)}
+#drawer header h2{margin:0;font-size:1.25rem}
+.items{flex:1;overflow:auto;margin:0 calc(var(--sp-2) * -1);padding:0 var(--sp-2)}
+.irow{display:flex;gap:var(--sp-3);align-items:center;padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.irow .em{width:52px;height:52px;flex:none;display:grid;place-items:center;font-size:1.7rem;background:var(--card-2);border-radius:var(--r-sm)}
+.irow .g{flex:1;min-width:0}
+.irow .g b{display:block;font-size:.92rem;line-height:1.3}
+.q{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-sm);overflow:hidden;background:var(--card)}
+.q button{width:30px;height:30px;display:grid;place-items:center;font-weight:700;color:var(--ink-2)}
+.q button:hover:not(:disabled){background:var(--ac-soft);color:var(--ac-ink)}
+.q button:disabled{opacity:.35;cursor:not-allowed}
+.q .n{min-width:32px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:.9rem}
+.freeship{background:var(--ac-soft);border:1px dashed var(--ac);border-radius:var(--r-sm);padding:10px 12px;font-size:.83rem;margin-bottom:var(--sp-3)}
+.freeship .track{height:6px;border-radius:var(--r-pill);background:var(--card);margin-top:7px;overflow:hidden}
+.freeship .track i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),#8b5cf6);transition:width var(--t-slow)}
+.sum{border-top:1px solid var(--line);padding-top:var(--sp-3);margin-top:var(--sp-3)}
+.sum div{display:flex;justify-content:space-between;padding:3px 0;font-size:.92rem}
+.sum .tot{font-weight:800;font-size:1.2rem;border-top:1px dashed var(--line-2);margin-top:6px;padding-top:9px}
+.coup{display:flex;gap:6px;margin-bottom:var(--sp-3)}
+.coup input{flex:1;text-transform:uppercase}
+
+/* ============================================================================
+   10. MODAL
+   ========================================================================== */
+.ov{position:fixed;inset:0;background:rgba(10,15,30,.55);backdrop-filter:blur(3px);z-index:60;
+  display:flex;align-items:center;justify-content:center;padding:var(--sp-3);animation:fade var(--t) var(--ease)}
+@keyframes fade{from{opacity:0}}
+.md{background:var(--card);border-radius:var(--r-lg);padding:var(--sp-5);width:100%;max-width:560px;
+  max-height:90vh;overflow:auto;box-shadow:var(--sh-3);animation:pop var(--t) var(--ease)}
+.md.wide{max-width:840px}
+.md.narrow{max-width:420px}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}}
+.md h2{margin-top:0}
+.md .mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-3)}
+.mfoot{display:flex;gap:var(--sp-2);justify-content:flex-end;margin-top:var(--sp-4);flex-wrap:wrap}
+
+/* ============================================================================
+   11. PRODUCT DETAIL + REVIEWS
+   ========================================================================== */
+.pd{display:grid;grid-template-columns:minmax(0,1fr) 1fr;gap:var(--sp-5);align-items:start}
+@media(max-width:720px){.pd{grid-template-columns:1fr}}
+.pd .pm{background:linear-gradient(160deg,var(--card-2),var(--ac-soft));border:1px solid var(--line);
+  border-radius:var(--r-lg);aspect-ratio:1;display:grid;place-items:center;font-size:7rem;position:relative}
+.pd .pm img{width:100%;height:100%;object-fit:cover;border-radius:var(--r-lg)}
+.spec{display:grid;grid-template-columns:auto 1fr;gap:6px var(--sp-4);font-size:.9rem;margin:var(--sp-3) 0}
+.spec dt{color:var(--mut)} .spec dd{margin:0;font-weight:600}
+.rv{border-top:1px solid var(--line);padding-top:var(--sp-4);margin-top:var(--sp-4)}
+.rvitem{padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.rvhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.85rem;
+  background:var(--ac-soft);color:var(--ac-ink);flex:none}
+.rating-input{display:flex;gap:2px;flex-direction:row-reverse;justify-content:flex-end}
+.rating-input input{position:absolute;opacity:0;width:0;height:0}
+.rating-input label{cursor:pointer;font-size:1.7rem;color:var(--line-2);margin:0;line-height:1;transition:color var(--t-fast)}
+.rating-input input:checked~label,.rating-input label:hover,.rating-input label:hover~label{color:var(--gold)}
+.rating-input input:focus-visible+label{outline:3px solid var(--ac-2);outline-offset:2px}
+.rmean{font-size:2.6rem;font-weight:800;line-height:1}
+.bars .b{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.8rem}
+.bars .b .t{width:34px;color:var(--mut)}
+.bars .b .track{flex:1;height:9px;border-radius:var(--r-pill);background:var(--card-2);overflow:hidden}
+.bars .b .track i{display:block;height:100%;background:var(--gold);border-radius:var(--r-pill)}
+.bars .b .n{width:26px;text-align:right;color:var(--mut)}
+
+/* ============================================================================
+   12. CHECKOUT STEPPER
+   ========================================================================== */
+.steps{display:flex;gap:6px;margin-bottom:var(--sp-4)}
+.steps i{flex:1;height:6px;border-radius:var(--r-pill);background:var(--line);transition:background var(--t)}
+.steps i.on{background:var(--ac)}
+.stepnav{display:flex;gap:var(--sp-3);margin-bottom:var(--sp-4);flex-wrap:wrap}
+.stepnav div{flex:1;min-width:88px;font-size:.78rem;color:var(--mut);border-top:3px solid var(--line);padding-top:7px}
+.stepnav div.on{border-color:var(--ac);color:var(--ink);font-weight:700}
+.adr{border:1px solid var(--line-2);border-radius:var(--r-md);padding:12px;cursor:pointer;transition:all var(--t-fast);text-align:left;width:100%;display:block}
+.adr:hover{border-color:var(--ac)}
+.adr.on{border-color:var(--ac);background:var(--ac-soft);box-shadow:0 0 0 3px var(--ac-soft)}
+.pay{display:flex;gap:10px;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-md);padding:12px;cursor:pointer;transition:all var(--t-fast)}
+.pay:hover{border-color:var(--ac)}
+.pay.on{border-color:var(--ac);background:var(--ac-soft);box-shadow:0 0 0 3px var(--ac-soft)}
+.pay .pe{font-size:1.5rem}
+.pay b{display:block;font-size:.92rem}
+.pay span{color:var(--mut);font-size:.78rem}
+
+/* ============================================================================
+   13. ORDERS + TIMELINE
+   ========================================================================== */
+.ord{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--sp-4);margin-bottom:var(--sp-3);box-shadow:var(--sh-1)}
+.ordhead{display:flex;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap;align-items:flex-start;margin-bottom:var(--sp-3)}
+.trk{display:flex;gap:6px;margin:var(--sp-3) 0}
+.trk div{flex:1;text-align:center;font-size:.75rem;padding:8px 4px;border-radius:var(--r-sm);background:var(--card-2);color:var(--mut);position:relative}
+.trk div.on{background:var(--ac-soft);color:var(--ac-ink);font-weight:700}
+.trk div.done{background:var(--ok-soft);color:var(--ok)}
+.trk div small{display:block;font-weight:500;font-size:.68rem;opacity:.8}
+.trk div::before{content:'â€¢';display:block;font-size:1.1rem;line-height:1;margin-bottom:2px}
+.trk div.on::before{content:'â—'}
+.trk div.done::before{content:'âœ“'}
+.trk div:first-child::before,.trk div:last-child::before{content:'â€¢'}
+.oline{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+.oline .em{width:40px;height:40px;flex:none;display:grid;place-items:center;background:var(--card-2);border-radius:var(--r-sm);font-size:1.3rem}
+
+/* ============================================================================
+   14. ADMIN: stats, tables
+   ========================================================================== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-5)}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--sp-4);box-shadow:var(--sh-1)}
+.stat .lbl{color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.stat .val{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;margin-top:4px}
+.stat .sub{font-size:.78rem;color:var(--mut)}
+.stat .ico{font-size:1.4rem;float:right}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--sp-4);box-shadow:var(--sh-1);margin-bottom:var(--sp-4)}
+.panel h3{margin-top:0}
+.sc{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;background:var(--card);font-size:.9rem}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{background:var(--card-2);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700;white-space:nowrap;position:sticky;top:0}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--card-2)}
+td select{width:auto;min-width:120px;padding:5px 30px 5px 8px;font-size:.85rem}
+.chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:var(--sp-3)}
+.chart .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}
+.chart .col .bar{width:100%;max-width:44px;background:linear-gradient(180deg,var(--ac),#8b5cf6);border-radius:var(--r-xs) var(--r-xs) 0 0;min-height:3px;transition:height var(--t-slow) var(--ease)}
+.chart .col .lb{font-size:.68rem;color:var(--mut);white-space:nowrap}
+.chart .col .vl{font-size:.68rem;font-weight:700}
+.donut{display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap}
+.dlegend{display:flex;flex-direction:column;gap:5px;font-size:.85rem}
+.dlegend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:7px}
+
+/* ============================================================================
+   15. STATES: skeleton, empty, toast
+   ========================================================================== */
+.sk{height:300px;border-radius:var(--r-lg);background:linear-gradient(90deg,var(--card),var(--card-2),var(--card));
+  background-size:200% 100%;animation:sk 1.3s infinite linear}
+.sk.sm{height:22px;border-radius:var(--r-pill)}
+@keyframes sk{to{background-position:-200% 0}}
+.empty{text-align:center;padding:56px var(--sp-4);color:var(--mut);grid-column:1/-1}
+.empty .ee{font-size:3rem;display:block;margin-bottom:var(--sp-2)}
+.empty h3{margin-bottom:6px}
+#toasts{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:80;
+  display:flex;flex-direction:column;gap:8px;align-items:center;width:min(440px,calc(100% - 24px))}
+.t{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:var(--r-md);font-weight:600;font-size:.9rem;
+  box-shadow:var(--sh-3);display:flex;gap:12px;align-items:center;animation:tin var(--t) var(--ease);width:100%}
+@keyframes tin{from{opacity:0;transform:translateY(14px)}}
+.t.e{background:var(--bad);color:#fff}
+.t.ok{background:var(--ok);color:#fff}
+.t .msg{flex:1}
+.t button{color:inherit;font-weight:800;text-decoration:underline;flex:none}
+.pg{display:flex;gap:6px;justify-content:center;margin:var(--sp-5) 0;flex-wrap:wrap}
+
+/* ============================================================================
+   16. FOOTER
+   ========================================================================== */
+footer{border-top:1px solid var(--line);background:var(--card);margin-top:auto}
+.footin{max-width:var(--maxw);margin:0 auto;padding:var(--sp-6) 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-5)}
+.footin h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:10px}
+.footin li{padding:3px 0;font-size:.9rem}
+.footin button{color:var(--ink-2);font-size:.9rem;text-align:left}
+.footin button:hover{color:var(--ac)}
+.fbot{border-top:1px solid var(--line);text-align:center;color:var(--mut);padding:var(--sp-4) 16px;font-size:.82rem}
+
+/* ============================================================================
+   17. INVOICE (screen preview + print)
+   ========================================================================== */
+#printArea{display:none}
+.inv{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--sp-5);max-width:760px;margin:0 auto}
+.inv .top{display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:var(--sp-3);margin-bottom:var(--sp-4)}
+.inv table{font-size:.9rem}
+.inv th{background:transparent;text-transform:none;letter-spacing:0;font-size:.8rem;color:var(--mut)}
+.inv .tot{text-align:right;margin-left:auto;max-width:280px;margin-top:var(--sp-4)}
+
+/* ============================================================================
+   18. RESPONSIVE
+   ========================================================================== */
+@media(max-width:980px){
+  .shop{grid-template-columns:1fr}
+  .filters{position:static;max-height:none;display:none}
+  .filters.open{display:block}
+  .fbtn{display:inline-flex!important}
+}
+@media(max-width:760px){
+  .navin{flex-wrap:wrap;gap:var(--sp-2)}
+  .searchwrap{order:3;max-width:none;flex-basis:100%}
+  #navr{margin-left:auto}
+  #navr .lbl{display:none}
+  .brand{font-size:1.15rem}
+  main{padding:var(--sp-4) 14px var(--sp-6)}
+  .form2{grid-template-columns:1fr}
+  .hero{border-radius:var(--r-lg)}
+  .md{padding:var(--sp-4)}
+}
+@media(min-width:981px){.fbtn{display:none!important}}
+@media(max-width:420px){.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.promo{grid-template-columns:1fr}}
+
+/* ============================================================================
+   19. MOTION / PRINT
+   ========================================================================== */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff!important;color:#000;padding:0}
+  .nav,#drawer,#scrim,#toasts,.ov,footer,.no-print,.filters,.tools{display:none!important}
+  #printArea{display:block!important}
+  .inv{border:0;padding:0;max-width:none}
+  .inv table{font-size:11pt}
+  a{text-decoration:none;color:#000}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="nav">
+  <div class="navin">
+    <button class="brand" onclick="go('shop')" aria-label="ShopEase home">
+      <span class="logo" aria-hidden="true">&#128722;</span><span>Shop<em>Ease</em></span>
+    </button>
+    <div class="searchwrap">
+      <span class="sicon" aria-hidden="true">&#128269;</span>
+      <input id="q" type="search" placeholder="Search products, brands&hellip;" aria-label="Search products"
+             autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
+      <div id="sug" class="sug" role="listbox" aria-label="Search suggestions" hidden></div>
+    </div>
+    <div id="navr"></div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1"></main>
+
+<div id="scrim" aria-hidden="true"></div>
+<aside id="drawer" role="dialog" aria-modal="false" aria-label="Shopping cart" tabindex="-1"></aside>
+<div id="printArea" aria-hidden="true"></div>
+<div id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<footer>
+  <div class="footin">
+    <div>
+      <div class="brand" style="margin-bottom:10px"><span class="logo" aria-hidden="true">&#128722;</span><span>Shop<em>Ease</em></span></div>
+      <p class="mut">A single-file demo storefront. The frontend and a simulated backend share one HTML document; every byte of data lives in your browser's localStorage.</p>
+    </div>
+    <div>
+      <h4>Shop</h4>
+      <ul>
+        <li><button onclick="go('shop')">All products</button></li>
+        <li><button onclick="go('shop',{cat:'Electronics'})">Electronics</button></li>
+        <li><button onclick="go('shop',{cat:'Fashion'})">Fashion</button></li>
+        <li><button onclick="go('shop',{cat:'Home'})">Home &amp; kitchen</button></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Account</h4>
+      <ul>
+        <li><button onclick="go('orders')">My orders</button></li>
+        <li><button onclick="go('wishlist')">Wishlist</button></li>
+        <li><button onclick="go('addresses')">Address book</button></li>
+        <li><button onclick="go('account')">Profile &amp; theme</button></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Keyboard</h4>
+      <ul class="tiny">
+        <li><kbd>/</kbd> search &middot; <kbd>c</kbd> cart &middot; <kbd>w</kbd> wishlist</li>
+        <li><kbd>g</kbd> then <kbd>s</kbd> shop &middot; <kbd>o</kbd> orders</li>
+        <li><kbd>Esc</kbd> close &middot; <kbd>?</kbd> all shortcuts</li>
+      </ul>
+    </div>
+  </div>
+  <div class="fbot">ShopEase &mdash; demo only. No real payments are processed. <span id="year"></span></div>
+</footer>
+
+<script>
+/* ============================================================================
+ *  ShopEase - single file storefront
+ * ---------------------------------------------------------------------------
+ *  The file is deliberately layered so the same file can act as frontend and
+ *  backend. Replace section 3 (server) with real HTTP calls and the rest of the
+ *  app keeps working.
+ *
+ *    1. Config            tunable business rules in one place
+ *    2. Utilities         formatting, escaping, dates, CSV
+ *    3. Database          localStorage-backed collection store
+ *    4. Seed              demo catalogue on first run
+ *    5. Backend           router + middleware + controllers (the "API")
+ *    6. API client        the only thing the UI is allowed to call
+ *    7. UI kernel         state, router, modal, toast, theme, helpers
+ *    8. Storefront        hero, filters, grid/list, suggestions
+ *    9. Product detail    gallery, specs, reviews
+ *   10. Cart drawer       quantity, coupons, free-shipping meter
+ *   11. Checkout          3-step wizard wired to the address book
+ *   12. Orders            timeline, invoice, cancellation
+ *   13. Account           wishlist, recently viewed, addresses, profile
+ *   14. Admin             dashboard, catalogue, coupons, reviews, orders
+ *   15. Shortcuts + boot
+ * ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * 1. CONFIG
+ * ------------------------------------------------------------------------- */
+const CONFIG = {
+  storeName: 'ShopEase',
+  currency: '\u20b9',
+  taxRate: 0.18,          // GST
+  freeShippingAbove: 999,
+  shippingFee: 49,
+  maxQtyPerItem: 10,
+  lowStockAt: 6,
+  recentMax: 12,
+  alsoLikeMax: 6,
+  reviewsPerPage: 5,
+  tokenTtlMs: 36e5,       // 1 hour
+  adminEmail: 'admin@shopease.com',
+  adminPassword: 'admin123',
+  shopperEmail: 'shopper@shopease.com',
+  shopperPassword: 'shopper123'
+};
+
+/* ---------------------------------------------------------------------------
+ * 2. UTILITIES
+ * ------------------------------------------------------------------------- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/** Escape untrusted text before it reaches innerHTML. */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/** Format an integer amount as Indian-format rupees. */
+const inr = n => CONFIG.currency + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const dateFmt = d => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const dateTimeFmt = d => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const relTime = d => {
+  const s = (Date.now() - new Date(d)) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  if (s < 604800) return Math.floor(s / 86400) + 'd ago';
+  return dateFmt(d);
+};
+const eta = () => { const d = new Date(Date.now() + 3 * 864e5); return dateFmt(d); };
+const debounce = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+/** Star glyphs for a 0-5 rating. */
+const stars = v => `<span class="stars" role="img" aria-label="${(+v).toFixed(1)} out of 5 stars"><span class="s">${'\u2605'.repeat(Math.round(v))}${'\u2606'.repeat(5 - Math.round(v))}</span></span>`;
+
+/** Highlight the matched part of a search suggestion. */
+const hl = (text, q) => {
+  const t = esc(text); if (!q) return t;
+  const i = t.toLowerCase().indexOf(q.toLowerCase());
+  return i < 0 ? t : t.slice(0, i) + '<mark>' + t.slice(i, i + q.length) + '</mark>' + t.slice(i + q.length);
+};
+
+const avatarOf = name => esc((name || '?').trim().charAt(0).toUpperCase());
+
+/** RFC-4180-ish CSV serialise / parse, so admin import/export is symmetric. */
+const toCsv = rows => rows.map(r =>
+  r.map(v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\n');
+function fromCsv(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') q = false;
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (c !== '\r') cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. DATABASE
+ * A tiny document store. Each collection is a JSON array under the `se_`
+ * prefix, with an in-memory fallback for private-mode browsers.
+ * ------------------------------------------------------------------------- */
+const mem = {};
+const db = {
+  key: c => 'se_' + c,
+  all(c) { try { return JSON.parse(localStorage.getItem(this.key(c))) || []; } catch (e) { return mem[c] || []; } },
+  save(c, a) { const v = JSON.stringify(a); try { localStorage.setItem(this.key(c), v); } catch (e) { mem[c] = a; } return a; },
+  byId(c, id) { return this.all(c).find(x => x.id == id); },
+  insert(c, o) {
+    const a = this.all(c);
+    o.id = o.id || (Math.max(0, ...a.map(x => parseInt(x.id, 10) || 0)) + 1);
+    a.push(o); this.save(c, a); return o;
+  },
+  update(c, id, patch) {
+    const a = this.all(c), i = a.findIndex(x => x.id == id);
+    if (i < 0) return null;
+    a[i] = { ...a[i], ...patch }; this.save(c, a); return a[i];
+  },
+  remove(c, id) { this.save(c, this.all(c).filter(x => x.id != id)); },
+  /** Upsert keyed by an arbitrary field - used for singleton docs (carts, wishlists). */
+  byKey(c, k, v) { return this.all(c).find(x => x[k] == v); },
+  put(c, key, value) {
+    const a = this.all(c).filter(x => x[key] !== undefined);
+    const found = this.all(c).find(x => x[key] === value[key]);
+    const doc = { ...(found || {}), ...value };
+    const rest = this.all(c).filter(x => x[key] !== value[key]);
+    this.save(c, [...rest, doc]); return doc;
+  },
+  clearDemo() {
+    ['products', 'users', 'coupons', 'carts', 'orders', 'reviews', 'wishlist', 'recent', 'addresses'].forEach(c => this.save(c, []));
+  }
+};
+
+/** Password hashing. SHA-256 where available, deterministic fallback otherwise. */
+async function sha(s) {
+  if (globalThis.crypto && crypto.subtle) {
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+  let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return 'fb' + (h >>> 0).toString(16);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. SEED
+ * Runs once. Creates the catalogue, two demo logins and starter reviews so
+ * every screen has something to show on first visit.
+ * ------------------------------------------------------------------------- */
+async function seed() {
+  if (db.all('products').length) return;
+
+  // [name, emoji, category, brand, price, rating, stock, description]
+  const CATALOGUE = [
+    ['Wireless Earbuds', '\u{1F3A7}', 'Electronics', 'SonicWave', 2499, 4.5, 12, 'Active noise cancelling earbuds with a 24-hour battery life and low-latency mode.'],
+    ['Smart Watch', '\u231A', 'Electronics', 'PulseTrack', 3999, 4.3, 8, 'Tracks steps, sleep, SpO2 and heart rate. 5ATM water resistant with a 7-day battery.'],
+    ['Bluetooth Speaker', '\u{1F50A}', 'Electronics', 'SonicWave', 1799, 4.2, 14, 'Portable speaker with passive bass radiators and 12 hours of playtime.'],
+    ['Mechanical Keyboard', '\u2328', 'Electronics', 'KeyForge', 5499, 4.7, 6, 'Hot-swappable 75% keyboard with tactile switches and a gasket mount.'],
+    ['4K Action Camera', '\u{1F4F7}', 'Electronics', 'LumenGo', 12999, 4.6, 4, 'Shoots 4K60 with in-body stabilisation and a dual-screen body.'],
+    ['Running Shoes', '\u{1F45F}', 'Fashion', 'StrideLab', 2799, 4.6, 20, 'Lightweight cushioned shoes with a breathable engineered knit upper.'],
+    ['Denim Jacket', '\u{1F9E5}', 'Fashion', 'Northloom', 1899, 4.1, 15, 'Classic fit jacket in washed blue denim with a light fleece lining.'],
+    ['Linen Shirt', '\u{1F455}', 'Fashion', 'Northloom', 1299, 4.2, 24, 'Relaxed-fit linen shirt that softens with every wash.'],
+    ['Leather Backpack', '\u{1F392}', 'Fashion', 'Carrywell', 2299, 4.5, 25, '30L backpack with a padded laptop sleeve and hidden passport pocket.'],
+    ['Yoga Mat', '\u{1F9D8}', 'Sports', 'FlowFit', 699, 4.3, 30, '6mm non-slip natural rubber mat with alignment lines.'],
+    ['Cricket Bat', '\u{1F3CF}', 'Sports', 'WillowWorks', 2199, 4.7, 9, 'English willow blade, balanced for stroke play with a cane handle.'],
+    ['Adjustable Dumbbells', '\u{1F3CB}', 'Sports', 'IronWorks', 7499, 4.5, 7, 'Dial-adjust dumbbells replacing 15 pairs, from 2kg to 24kg each.'],
+    ['Coffee Maker', '\u2615', 'Home', 'BrewMaster', 3299, 4.4, 6, 'Brews up to 6 cups with a reusable stainless filter and a timer.'],
+    ['Table Lamp', '\u{1F4A1}', 'Home', 'LumenGo', 899, 4.0, 0, 'Dimmable LED lamp with three colour temperatures and a fabric shade.'],
+    ['Steel Water Bottle', '\u{1FAD6}', 'Home', 'HydraPeak', 499, 4.4, 40, 'Double-walled 1L bottle that keeps drinks cold for 24 hours.'],
+    ['Air Purifier', '\u{1F32C}', 'Home', 'PureFlow', 11999, 4.6, 5, 'HEPA + carbon filter for rooms up to 40m\u00b2, with an air-quality readout.'],
+    ['Notebook Set', '\u{1F4D3}', 'Stationery', 'PaperPlus', 349, 4.2, 50, 'Pack of 3 ruled notebooks, 200 pages each, with dot-grid inserts.'],
+    ['Fountain Pen', '\u{1F58A}', 'Stationery', 'PaperPlus', 899, 4.6, 18, 'Steel nib fountain pen with a converter and two ink cartridges.'],
+    ['Planner Notebook', '\u{1F5D3}', 'Stationery', 'PaperPlus', 599, 4.3, 22, 'Undated 12-month planner with stickers, habit and budget trackers.'],
+    ['Desk Organiser', '\u{1F4DA}', 'Stationery', 'Carrywell', 749, 4.0, 16, 'Bamboo organiser with slots for pens, cables, phone and business cards.']
+  ];
+
+  CATALOGUE.forEach((p, i) => db.insert('products', {
+    name: p[0], emoji: p[1], category: p[2], brand: p[3], price: p[4],
+    rating: p[5], baseRating: p[5], reviewCount: 0, stock: p[6], desc: p[7],
+    image: '', created: Date.now() - (CATALOGUE.length - i) * 36e5
+  }));
+
+  const admin = db.insert('users', {
+    name: 'Admin', email: CONFIG.adminEmail, hash: await sha(CONFIG.adminPassword), role: 'admin', joined: Date.now()
+  });
+  const shopper = db.insert('users', {
+    name: 'Riya Sharma', email: CONFIG.shopperEmail, hash: await sha(CONFIG.shopperPassword), role: 'user', joined: Date.now()
+  });
+
+  [['SAVE10', 'percent', 10, 500, '2030-12-31', 'Flat 10% off on orders above \u20b9500'],
+   ['FLAT100', 'flat', 100, 1000, '2030-12-31', '\u20b9100 off on orders above \u20b91,000'],
+   ['WELCOME20', 'percent', 20, 1500, '2030-12-31', '20% off for first-time buyers above \u20b91,500'],
+   ['FREESHIP', 'flat', 99, 300, '2030-12-31', 'Waives shipping on smaller orders'],
+   ['MEGA50', 'percent', 50, 5000, '2027-06-30', 'Half-price event on premium gear']
+  ].forEach(c => db.insert('coupons', {
+    code: c[0], type: c[1], value: c[2], min: c[3], expires: c[4], note: c[5], active: true, used: 0
+  }));
+
+  // Starter reviews so the ratings UI is not empty on a fresh install.
+  const REVIEWS = [
+    [1, shopper.id, shopper.name, 5, 'Battery is unreal', 'Paired instantly and lasted two full days with ANC on. Would buy again.'],
+    [1, shopper.id, shopper.name, 4, 'Great, minor hiss', 'Excellent for the price. A touch of background hiss at low volume.'],
+    [3, shopper.id, shopper.name, 5, 'Room filler', 'Loud enough for a small party and the bass is properly deep.'],
+    [5, shopper.id, shopper.name, 5, 'Worth every rupee', ' stabilisation makes handheld footage look professional.'],
+    [9, shopper.id, shopper.name, 4, 'Sleek and sturdy', 'Zips are smooth and the laptop sleeve actually fits a 16-inch.'],
+    [10, shopper.id, shopper.name, 5, 'Grip is amazing', 'No slipping even in a sweaty hot-yoga class. Smells like natural rubber.'],
+    [14, shopper.id, shopper.name, 4, 'Cozy light', 'Three colour temperatures is a nice touch. Dimming is smooth.'],
+    [16, shopper.id, shopper.name, 5, 'Air visibly cleaner', 'The particle readout dropped from 180 to 12 within ten minutes.']
+  ];
+  REVIEWS.forEach((r, i) => db.insert('reviews', {
+    pid: r[0], uid: r[1], name: r[2], rating: r[3], title: r[4], body: r[5],
+    status: 'published', created: Date.now() - (REVIEWS.length - i) * 36e5
+  }));
+  recomputeRatings();
+}
+
+/** Recompute the cached average rating + count shown on product cards. */
+function recomputeRatings() {
+  const reviews = db.all('reviews');
+  const products = db.all('products');
+  for (const p of products) {
+    const rs = reviews.filter(r => r.pid == p.id && r.status === 'published');
+    p.reviewCount = rs.length;
+    p.rating = rs.length
+      ? Math.round(rs.reduce((s, r) => s + r.rating, 0) / rs.length * 10) / 10
+      : (p.baseRating || 0);
+  }
+  db.save('products', products);
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. BACKEND  (simulated API surface)
+ * ------------------------------------------------------------------------- */
+const SECRET = 'shopease-demo-secret';
+const routes = [];
+const ok  = (data, status = 200) => ({ status, data });
+const bad = (status, error) => ({ status, error });
+
+const re = {
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  phone: /^[6-9]\d{9}$/,
+  pin: /^\d{6}$/,
+  upi: /^[\w.-]+@[\w-]+$/,
+  name: /^.{2,60}$/
+};
+
+function route(method, path, mw, handler) {
+  routes.push({
+    method,
+    re: new RegExp('^' + path.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'),
+    keys: (path.match(/:(\w+)/g) || []).map(k => k.slice(1)),
+    mw, handler
+  });
+}
+
+/** Route, authenticate, dispatch. Artificial latency keeps loading states honest. */
+async function server(method, url, body, token) {
+  await sleep(90 + Math.random() * 160);
+  const [path, qs] = url.split('?');
+  const query = Object.fromEntries(new URLSearchParams(qs || ''));
+  for (const r of routes) {
+    if (r.method !== method) continue;
+    const m = path.match(r.re);
+    if (!m) continue;
+    const params = { ...m.groups };
+    const ctx = { body: body || {}, query, params, user: null, token };
+    try {
+      for (const f of r.mw) { const e = await f(ctx); if (e) return e; }
+      return await r.handler(ctx);
+    } catch (err) {
+      return bad(500, err.message || 'Unexpected server error');
+    }
+  }
+  return bad(404, `No route for ${method} ${path}`);
+}
+
+/* --- tokens ---------------------------------------------------------------- */
+async function makeToken(u) {
+  const payload = btoa(JSON.stringify({ uid: u.id, role: u.role, exp: Date.now() + CONFIG.tokenTtlMs }));
+  return payload + '.' + await sha(payload + SECRET);
+}
+async function readToken(t) {
+  if (!t) return null;
+  const [p, s] = t.split('.');
+  if (!p || s !== await sha(p + SECRET)) return null;
+  try {
+    const d = JSON.parse(atob(p));
+    return d.exp > Date.now() ? d : null;
+  } catch { return null; }
+}
+const optAuth = async c => { const d = await readToken(c.token); if (d) c.user = db.byId('users', d.uid); };
+const auth    = async c => { await optAuth(c); return c.user ? null : bad(401, 'Please log in first'); };
+const admin   = async c => { const e = await auth(c); return e || (c.user.role === 'admin' ? null : bad(403, 'Admin access only')); };
+const pub     = u => ({ id: u.id, name: u.name, email: u.email, role: u.role, joined: u.joined });
+
+/* --- cart helpers ---------------------------------------------------------- */
+const uidOf = c => (c.user ? c.user.id : 'guest');
+const getCart = uid => db.byKey('carts', 'uid', uid) || { uid, items: [], coupon: null };
+function saveCart(c) { db.put('carts', 'uid', c); return c; }
+
+/**
+ * Price a cart. `items` is joined to live product records so prices, stock and
+ * names always reflect the current catalogue rather than what was added earlier.
+ */
+function totals(cart) {
+  const items = cart.items
+    .map(i => ({ ...i, p: db.byId('products', i.pid) }))
+    .filter(i => i.p);
+  const sub = items.reduce((s, i) => s + i.p.price * i.qty, 0);
+
+  let disc = 0, couponError = null;
+  const cp = cart.coupon && db.all('coupons').find(x => x.code === cart.coupon);
+  if (cart.coupon) {
+    if (!cp || cp.active === false) couponError = 'That coupon is no longer valid';
+    else if (cp.expires < new Date().toISOString().slice(0, 10)) couponError = 'That coupon has expired';
+    else if (sub < cp.min) couponError = `Spend \u20b9${cp.min.toLocaleString('en-IN')} to use ${cp.code}`;
+    else disc = cp.type === 'percent' ? Math.round(sub * cp.value / 100) : Math.min(cp.value, sub);
+  }
+  const tax = Math.round((sub - disc) * CONFIG.taxRate);
+  const ship = sub && sub - disc < CONFIG.freeShippingAbove ? CONFIG.shippingFee : 0;
+  const total = sub - disc + tax + ship;
+  return {
+    items, sub, disc, tax, ship, total,
+    coupon: disc ? cart.coupon : null,
+    couponError: disc ? null : couponError,
+    freeShipGap: Math.max(0, CONFIG.freeShippingAbove - (sub - disc)),
+    eta: eta()
+  };
+}
+
+/** Fold the anonymous cart into a real account after login / signup. */
+async function mergeGuest(uid) {
+  const g = getCart('guest');
+  if (!g.items.length) return;
+  const c = getCart(uid);
+  g.items.forEach(i => {
+    const x = c.items.find(y => y.pid == i.pid);
+    if (x) x.qty += i.qty; else c.items.push({ ...i });
+  });
+  saveCart(c);
+  saveCart({ uid: 'guest', items: [], coupon: null });
+}
+
+/* --- wishlist / recently viewed ------------------------------------------- */
+function listDoc(coll, uid) { return db.byKey(coll, 'uid', uid) || { uid, pids: [] }; }
+function saveList(coll, uid, pids) { db.put(coll, 'uid', { uid, pids }); return pids; }
+
+/* ---------------------------------------------------------------------------
+ * 6. API CLIENT
+ * The single seam between UI and backend. Swapping this for `fetch` is the only
+ * change needed to put a real server behind this app.
+ * ------------------------------------------------------------------------- */
+const api = async (method, url, body) => {
+  const r = await server(method, url, body, sessionStorage.getItem('se_token'));
+  if (r.status >= 400) { const e = new Error(r.error); e.status = r.status; throw e; }
+  return r.data;
+};
+
+/* ===================== AUTH ================================================= */
+route('POST', '/api/auth/signup', [], async c => {
+  const { name = '', email = '', password = '' } = c.body;
+  if (!re.name.test(name.trim())) return bad(400, 'Enter your name (2-60 characters)');
+  if (!re.email.test(email)) return bad(400, 'Enter a valid email address');
+  if (password.length < 6) return bad(400, 'Password must be at least 6 characters');
+  const e = email.toLowerCase();
+  if (db.all('users').some(u => u.email === e)) return bad(409, 'That email is already registered');
+  const u = db.insert('users', { name: name.trim(), email: e, hash: await sha(password), role: 'user', joined: Date.now() });
+  await mergeGuest(u.id);
+  return ok({ token: await makeToken(u), user: pub(u) }, 201);
+});
+
+route('POST', '/api/auth/login', [], async c => {
+  const email = (c.body.email || '').toLowerCase();
+  const u = db.all('users').find(x => x.email === email);
+  if (!u || u.hash !== await sha(c.body.password || '')) return bad(401, 'Wrong email or password');
+  await mergeGuest(u.id);
+  return ok({ token: await makeToken(u), user: pub(u) });
+});
+
+route('GET', '/api/auth/me', [auth], c => ok(pub(c.user)));
+
+/* ===================== PRODUCTS ============================================== */
+route('GET', '/api/products', [], c => {
+  const { search = '', category = 'All', brand = '', min = 0, max = 0, rating = 0, inStock = 0, sort = 'new', page = 1, limit = 12 } = c.query;
+  const all = db.all('products');
+  const s = search.trim().toLowerCase();
+  let a = all.filter(p =>
+    (!s || (p.name + ' ' + p.brand + ' ' + p.category + ' ' + (p.desc || '')).toLowerCase().includes(s)) &&
+    (category === 'All' || p.category === category) &&
+    (!brand || p.brand === brand) &&
+    (!+min || p.price >= +min) && (!+max || p.price <= +max) &&
+    (+rating ? p.rating >= +rating : true) &&
+    (+inStock ? p.stock > 0 : true));
+
+  const S = {
+    low: (x, y) => x.price - y.price,
+    high: (x, y) => y.price - x.price,
+    rating: (x, y) => y.rating - x.rating || y.reviewCount - x.reviewCount,
+    reviews: (x, y) => y.reviewCount - x.reviewCount,
+    name: (x, y) => x.name.localeCompare(y.name)
+  };
+  a = a.sort(S[sort] || S.new);
+
+  const pages = Math.max(1, Math.ceil(a.length / +limit || 1));
+  const perCat = {}; all.forEach(p => { perCat[p.category] = (perCat[p.category] || 0) + 1; });
+  return ok({
+    items: a.slice((+page - 1) * +limit, +page * +limit),
+    total: a.length, pages, page: +page,
+    categories: ['All', ...new Set(all.map(p => p.category))],
+    brands: [...new Set(all.map(p => p.brand).filter(Boolean))].sort(),
+    counts: perCat,
+    priceBounds: { min: Math.min(0, ...all.map(p => p.price)), max: Math.max(0, ...all.map(p => p.price)) }
+  });
+});
+
+route('GET', '/api/products/suggest', [], c => {
+  const s = (c.query.q || '').trim().toLowerCase();
+  if (!s) return ok({ suggestions: [] });
+  const all = db.all('products');
+  const scored = all
+    .map(p => {
+      const hay = `${p.name} ${p.brand} ${p.category}`.toLowerCase();
+      const i = hay.indexOf(s);
+      if (i < 0) return null;
+      return { p, score: (p.name.toLowerCase().startsWith(s) ? 0 : 100) + i };
+    })
+    .filter(Boolean).sort((a, b) => a.score - b.score).slice(0, 7);
+  return ok({
+    suggestions: scored.map(({ p }) => ({ id: p.id, name: p.name, brand: p.brand, price: p.price, emoji: p.emoji, stock: p.stock })),
+    categories: [...new Set(all.filter(p => p.category.toLowerCase().includes(s)).map(p => p.category))].slice(0, 3)
+  });
+});
+
+/* --- CSV round trip (bulk catalogue management) ----------------------------
+ * Registered before /api/products/:id so the static path is not swallowed
+ * by the parameterised route. The router is first-match-wins. */
+route('GET', '/api/products/export.csv', [admin], () => {
+  const head = ['name', 'emoji', 'category', 'brand', 'price', 'stock', 'desc'];
+  const rows = db.all('products').map(p => head.map(h => p[h]));
+  return ok({ filename: 'shopease-products.csv', csv: toCsv([head, ...rows]) });
+});
+
+route('POST', '/api/products/import', [admin], c => {
+  const rows = fromCsv(String(c.body.csv || ''));
+  if (rows.length < 2) return bad(400, 'Paste CSV with a header row plus at least one product');
+  const head = rows[0].map(h => h.trim().toLowerCase());
+  if (!head.includes('name') || !head.includes('price')) return bad(400, 'CSV header must include at least: name, price');
+  const created = [], updated = [], errors = [];
+  rows.slice(1).forEach((r, i) => {
+    const o = Object.fromEntries(head.map((h, j) => [h, (r[j] || '').trim()]));
+    const p = prodBody(o);
+    if (!p) { errors.push(`Row ${i + 2}: name and a price above 0 are required`); return; }
+    const exist = db.all('products').find(x => x.name.toLowerCase() === p.name.toLowerCase());
+    if (exist) { db.update('products', exist.id, p); updated.push(p.name); }
+    else { p.created = Date.now(); p.reviewCount = 0; p.rating = p.baseRating; db.insert('products', p); created.push(p.name); }
+  });
+  return ok({ created: created.length, updated: updated.length, errors });
+});
+
+route('GET', '/api/products/:id', [], c => {
+  const p = db.byId('products', c.params.id);
+  if (!p) return bad(404, 'Product not found');
+  const related = db.all('products')
+    .filter(x => x.id != p.id && x.category === p.category)
+    .sort((a, b) => b.rating - a.rating).slice(0, CONFIG.alsoLikeMax);
+  return ok({
+    ...p,
+    related,
+    inCart: getCart(uidOf(c)).items.some(i => i.pid == p.id),
+    inWishlist: listDoc('wishlist', uidOf(c)).pids.some(x => x == p.id)
+  });
+});
+
+const prodBody = b => {
+  const p = {
+    name: (b.name || '').trim(),
+    emoji: (b.emoji || '\u{1F4E6}').trim(),
+    category: (b.category || '').trim(),
+    brand: (b.brand || '').trim(),
+    price: Math.round(+b.price),
+    stock: Math.max(0, Math.floor(+b.stock)),
+    desc: (b.desc || '').trim(),
+    image: (b.image || '').trim(),
+    baseRating: +b.rating ? clamp(+b.rating, 0, 5) : 4
+  };
+  return p.name && p.category && p.price > 0 ? p : null;
+};
+
+route('POST', '/api/products', [admin], c => {
+  const p = prodBody(c.body);
+  if (!p) return bad(400, 'Name, category and a price above 0 are required');
+  p.created = Date.now(); p.reviewCount = 0; p.rating = p.baseRating;
+  return ok(db.insert('products', p), 201);
+});
+
+route('PUT', '/api/products/:id', [admin], c => {
+  const p = prodBody(c.body);
+  if (!p) return bad(400, 'Invalid product data');
+  const cur = db.byId('products', c.params.id);
+  if (!cur) return bad(404, 'Product not found');
+  if (!cur.reviewCount) p.baseRating = p.baseRating || cur.baseRating;
+  return ok(db.update('products', c.params.id, p));
+});
+
+route('DELETE', '/api/products/:id', [admin], c => {
+  const p = db.byId('products', c.params.id);
+  if (!p) return bad(404, 'Product not found');
+  db.remove('products', p.id);
+  db.save('reviews', db.all('reviews').filter(r => r.pid != p.id));
+  db.all('carts').forEach(c => saveCart({ ...c, items: c.items.filter(i => i.pid != p.id) }));
+  return ok({ deleted: true });
+});
+
+/* --- reviews -------------------------------------------------------------- */
+route('GET', '/api/products/:id/reviews', [], c => {
+  const { page = 1 } = c.query;
+  const pid = c.params.id;
+  const all = db.all('reviews')
+    .filter(r => r.pid == pid && r.status === 'published')
+    .sort((a, b) => b.created - a.created);
+  const p = db.byId('products', pid);
+  const dist = [5, 4, 3, 2, 1].map(star => ({ star, n: all.filter(r => r.rating === star).length }));
+  const pages = Math.max(1, Math.ceil(all.length / CONFIG.reviewsPerPage));
+  return ok({
+    items: all.slice((+page - 1) * CONFIG.reviewsPerPage, +page * CONFIG.reviewsPerPage),
+    total: all.length, pages, page: +page, dist,
+    summary: { average: p ? p.rating : 0, count: all.length },
+    canReview: !!c.user
+  });
+});
+
+route('POST', '/api/products/:id/reviews', [auth], async c => {
+  const p = db.byId('products', c.params.id);
+  if (!p) return bad(404, 'Product not found');
+  const rating = Math.round(+c.body.rating);
+  const title = (c.body.title || '').trim();
+  const body = (c.body.body || '').trim();
+  if (!(rating >= 1 && rating <= 5)) return bad(400, 'Pick a star rating between 1 and 5');
+  if (title.length < 3) return bad(400, 'Give your review a short headline (3+ characters)');
+  if (body.length < 10) return bad(400, 'Tell us a little more (10+ characters)');
+  const hasBought = db.all('orders').some(o =>
+    o.uid === c.user.id && o.status !== 'Cancelled' && o.items.some(i => i.pid == p.id));
+  const r = db.insert('reviews', {
+    pid: p.id, uid: c.user.id, name: c.user.name, rating, title, body,
+    verified: hasBought, status: 'published', created: Date.now()
+  });
+  recomputeRatings();
+  return ok(r, 201);
+});
+
+route('DELETE', '/api/reviews/:id', [auth], c => {
+  const r = db.byId('reviews', c.params.id);
+  if (!r) return bad(404, 'Review not found');
+  if (r.uid !== c.user.id && c.user.role !== 'admin') return bad(403, 'You can only delete your own review');
+  db.remove('reviews', r.id);
+  recomputeRatings();
+  return ok({ deleted: true });
+});
+
+/* ===================== WISHLIST + RECENTLY VIEWED ========================== */
+route('GET', '/api/wishlist', [optAuth], c => {
+  const ids = listDoc('wishlist', uidOf(c)).pids;
+  const items = ids.map(id => db.byId('products', id)).filter(Boolean);
+  return ok({ items, total: items.length });
+});
+
+route('POST', '/api/wishlist', [optAuth], c => {
+  const p = db.byId('products', c.body.productId);
+  if (!p) return bad(404, 'Product not found');
+  const d = listDoc('wishlist', uidOf(c));
+  if (!d.pids.some(x => x == p.id)) d.pids.unshift(p.id);
+  saveList('wishlist', uidOf(c), d.pids);
+  return ok({ items: d.pids.length, added: true });
+});
+
+route('DELETE', '/api/wishlist/:pid', [optAuth], c => {
+  const d = listDoc('wishlist', uidOf(c));
+  saveList('wishlist', uidOf(c), d.pids.filter(x => x != c.params.pid));
+  return ok({ items: d.pids.filter(x => x != c.params.pid).length });
+});
+
+route('POST', '/api/wishlist/:pid/move-to-cart', [optAuth], async c => {
+  const p = db.byId('products', c.params.pid);
+  if (!p) return bad(404, 'Product not found');
+  if (p.stock < 1) return bad(400, `${p.name} is out of stock`);
+  const cart = getCart(uidOf(c));
+  const it = cart.items.find(i => i.pid == p.id);
+  const cap = Math.min(p.stock, CONFIG.maxQtyPerItem);
+  if ((it ? it.qty : 0) + 1 > cap) return bad(400, `Only ${cap} allowed per order`);
+  it ? it.qty++ : cart.items.push({ pid: p.id, qty: 1 });
+  saveCart(cart);
+  saveList('wishlist', uidOf(c), listDoc('wishlist', uidOf(c)).pids.filter(x => x != p.id));
+  return ok({ cart: totals(cart) });
+});
+
+route('GET', '/api/recent', [optAuth], c => {
+  const ids = listDoc('recent', uidOf(c)).pids.slice(0, CONFIG.recentMax);
+  return ok({ items: ids.map(id => db.byId('products', id)).filter(Boolean) });
+});
+
+route('POST', '/api/recent', [optAuth], c => {
+  const p = db.byId('products', c.body.productId);
+  if (!p) return bad(404, 'Product not found');
+  const d = listDoc('recent', uidOf(c));
+  saveList('recent', uidOf(c), [p.id, ...d.pids.filter(x => x != p.id)].slice(0, CONFIG.recentMax));
+  return ok({ logged: true });
+});
+
+/* ===================== CART ================================================= */
+route('GET', '/api/cart', [optAuth], c => ok(totals(getCart(uidOf(c)))));
+
+route('POST', '/api/cart', [optAuth], c => {
+  const p = db.byId('products', c.body.productId);
+  const n = Math.max(1, Math.floor(+c.body.qty || 1));
+  if (!p) return bad(404, 'Product not found');
+  if (p.stock < 1) return bad(400, `${p.name} is out of stock`);
+  const cart = getCart(uidOf(c));
+  const it = cart.items.find(i => i.pid == p.id);
+  const cap = Math.min(p.stock, CONFIG.maxQtyPerItem);
+  if ((it ? it.qty : 0) + n > cap) return bad(400, `Only ${cap} of ${p.name} allowed per order`);
+  it ? it.qty += n : cart.items.push({ pid: p.id, qty: n });
+  saveCart(cart);
+  return ok(totals(cart), 201);
+});
+
+/* Registered before /api/cart/:pid so the literal path wins the match. */
+route('DELETE', '/api/cart/coupon', [optAuth], c => ok(totals(saveCart({ ...getCart(uidOf(c)), coupon: null }))));
+
+route('PUT', '/api/cart/:pid', [optAuth], c => {
+  const cart = getCart(uidOf(c));
+  const it = cart.items.find(i => i.pid == c.params.pid);
+  const p = db.byId('products', c.params.pid);
+  const n = Math.floor(+c.body.qty);
+  if (!it) return bad(404, 'That item is not in your cart');
+  if (!p) return bad(404, 'Product no longer exists');
+  if (n < 1) return bad(400, 'Quantity must be at least 1');
+  if (n > Math.min(p.stock, CONFIG.maxQtyPerItem)) return bad(400, `Quantity must be between 1 and ${Math.min(p.stock, CONFIG.maxQtyPerItem)}`);
+  it.qty = n; saveCart(cart);
+  return ok(totals(cart));
+});
+
+route('DELETE', '/api/cart/:pid', [optAuth], c => {
+  const cart = getCart(uidOf(c));
+  const gone = cart.items.find(i => i.pid == c.params.pid);
+  cart.items = cart.items.filter(i => i.pid != c.params.pid);
+  saveCart(cart);
+  return ok({ ...totals(cart), removed: gone ? { ...gone } : null });
+});
+
+route('GET', '/api/coupons', [], c => {
+  const today = new Date().toISOString().slice(0, 10);
+  return ok(db.all('coupons').filter(x => x.active !== false && x.expires >= today));
+});
+
+route('POST', '/api/coupons/apply', [optAuth], c => {
+  const code = (c.body.code || '').toUpperCase().trim();
+  const cp = db.all('coupons').find(x => x.code === code);
+  const cart = getCart(uidOf(c));
+  if (!cp || cp.active === false) return bad(400, 'That coupon code does not exist');
+  if (cp.expires < new Date().toISOString().slice(0, 10)) return bad(400, `${code} expired on ${dateFmt(cp.expires)}`);
+  const t = totals(cart);
+  if (t.sub < cp.min) return bad(400, `Add ${inr(cp.min - t.sub)} more to use ${code} (minimum ${inr(cp.min)})`);
+  return ok(totals(saveCart({ ...cart, coupon: code })));
+});
+
+/* ===================== ADDRESS BOOK ======================================== */
+const adrBody = b => {
+  const a = {
+    label: (b.label || 'Home').trim().slice(0, 24),
+    name: (b.name || '').trim(),
+    phone: (b.phone || '').replace(/\D/g, ''),
+    pin: (b.pin || '').replace(/\D/g, ''),
+    address: (b.address || '').trim(),
+    city: (b.city || '').trim(),
+    isDefault: !!b.isDefault
+  };
+  if (!re.name.test(a.name)) return { err: 'Enter the recipient name' };
+  if (!re.phone.test(a.phone)) return { err: 'Phone must be 10 digits starting with 6-9' };
+  if (!re.pin.test(a.pin)) return { err: 'PIN code must be 6 digits' };
+  if (a.address.length < 8) return { err: 'Enter the full street address' };
+  return { a };
+};
+
+route('GET', '/api/addresses', [auth], c =>
+  ok(db.all('addresses').filter(a => a.uid == c.user.id).sort((x, y) => y.isDefault - x.isDefault)));
+
+route('POST', '/api/addresses', [auth], c => {
+  const { a, err } = adrBody(c.body);
+  if (err) return bad(400, err);
+  const mine = db.all('addresses').filter(x => x.uid == c.user.id);
+  a.uid = c.user.id;
+  if (a.isDefault || !mine.length) a.isDefault = true;
+  if (a.isDefault) db.all('addresses').filter(x => x.uid == c.user.id).forEach(x => db.update('addresses', x.id, { isDefault: false }));
+  return ok(db.insert('addresses', a), 201);
+});
+
+route('PUT', '/api/addresses/:id', [auth], c => {
+  const cur = db.byId('addresses', c.params.id);
+  if (!cur || cur.uid != c.user.id) return bad(404, 'Address not found');
+  const { a, err } = adrBody({ ...cur, ...c.body });
+  if (err) return bad(400, err);
+  if (a.isDefault) db.all('addresses').filter(x => x.uid == c.user.id && x.id != cur.id).forEach(x => db.update('addresses', x.id, { isDefault: false }));
+  return ok(db.update('addresses', cur.id, { ...a, uid: c.user.id }));
+});
+
+route('DELETE', '/api/addresses/:id', [auth], c => {
+  const cur = db.byId('addresses', c.params.id);
+  if (!cur || cur.uid != c.user.id) return bad(404, 'Address not found');
+  db.remove('addresses', cur.id);
+  if (cur.isDefault) {
+    const rest = db.all('addresses').filter(x => x.uid == c.user.id);
+    if (rest.length) db.update('addresses', rest[0].id, { isDefault: true });
+  }
+  return ok({ deleted: true });
+});
+
+/* ===================== ORDERS =============================================== */
+const STATUSES = ['Placed', 'Packed', 'Shipped', 'Delivered'];
+
+route('POST', '/api/orders', [auth], c => {
+  const { shipping: s = {}, payment: pay = {} } = c.body;
+  const cart = getCart(c.user.id);
+  const t = totals(cart);
+  if (!t.items.length) return bad(400, 'Your cart is empty');
+
+  const { a, err } = adrBody(s);
+  if (err) return bad(400, err);
+  if (!re.email.test(s.email || '')) return bad(400, 'Enter a valid email for order updates');
+  if (!['cod', 'card', 'upi'].includes(pay.method)) return bad(400, 'Choose a payment method');
+  if (pay.method === 'card' && !/^\d{16}$/.test(String(pay.card || '').replace(/\s/g, ''))) return bad(400, 'Card number must be 16 digits');
+  if (pay.method === 'upi' && !re.upi.test(pay.upi || '')) return bad(400, 'Enter a valid UPI ID like name@bank');
+
+  for (const i of t.items) if (i.p.stock < i.qty) return bad(409, `${i.p.name} has only ${i.p.stock} left in stock`);
+
+  t.items.forEach(i => db.update('products', i.p.id, { stock: i.p.stock - i.qty }));
+  if (t.coupon) {
+    const cp = db.byId('coupons', t.coupon);
+    if (cp) db.update('coupons', cp.id, { used: (cp.used || 0) + 1 });
+  }
+
+  const d = new Date();
+  const seq = String(db.all('orders').length + 1).padStart(3, '0');
+  const id = 'SE-' + d.toISOString().slice(0, 10).replace(/-/g, '') + '-' + seq;
+  const o = db.insert('orders', {
+    id, uid: c.user.id, user: c.user.name, email: s.email,
+    date: d.toISOString(), status: 'Placed',
+    history: [{ status: 'Placed', at: d.toISOString(), note: 'Payment method: ' + pay.method.toUpperCase() }],
+    shipping: { ...a, email: s.email },
+    payment: { method: pay.method, last4: pay.method === 'card' ? String(pay.card || '').replace(/\D/g, '').slice(-4) : null, upi: pay.method === 'upi' ? pay.upi : null },
+    items: t.items.map(i => ({ pid: i.p.id, name: i.p.name, emoji: i.p.emoji, price: i.p.price, qty: i.qty })),
+    sub: t.sub, disc: t.disc, tax: t.tax, ship: t.ship, total: t.total, coupon: t.coupon
+  });
+
+  saveCart({ uid: c.user.id, items: [], coupon: null });
+  return ok(o, 201);
+});
+
+route('GET', '/api/orders', [auth], c =>
+  ok(db.all('orders').filter(o => o.uid == c.user.id).sort((a, b) => b.date.localeCompare(a.date))));
+
+route('GET', '/api/orders/:id', [auth], c => {
+  const o = db.byId('orders', c.params.id);
+  if (!o || (o.uid != c.user.id && c.user.role !== 'admin')) return bad(404, 'Order not found');
+  return ok(o);
+});
+
+route('PUT', '/api/orders/:id/cancel', [auth], c => {
+  const o = db.byId('orders', c.params.id);
+  if (!o || o.uid != c.user.id) return bad(404, 'Order not found');
+  if (!['Placed', 'Packed'].includes(o.status)) return bad(400, 'Shipped orders can no longer be cancelled');
+  o.items.forEach(i => {
+    const p = db.byId('products', i.pid);
+    if (p) db.update('products', p.id, { stock: p.stock + i.qty });
+  });
+  return ok(db.update('orders', o.id, {
+    status: 'Cancelled',
+    history: [...(o.history || []), { status: 'Cancelled', at: new Date().toISOString(), note: 'Cancelled by customer' }]
+  }));
+});
+
+/* ===================== ADMIN ================================================ */
+route('GET', '/api/admin/orders', [admin], () => ok(db.all('orders').sort((a, b) => b.date.localeCompare(a.date))));
+
+route('PUT', '/api/admin/orders/:id/status', [admin], c => {
+  const o = db.byId('orders', c.params.id);
+  if (!o) return bad(404, 'Order not found');
+  if (![...STATUSES, 'Cancelled'].includes(c.body.status)) return bad(400, 'Invalid status');
+  return ok(db.update('orders', o.id, {
+    status: c.body.status,
+    history: [...(o.history || []), { status: c.body.status, at: new Date().toISOString(), note: 'Updated by admin' }]
+  }));
+});
+
+route('GET', '/api/admin/dashboard', [admin], () => {
+  const orders = db.all('orders');
+  const paid = orders.filter(o => o.status !== 'Cancelled');
+  const revenue = paid.reduce((s, o) => s + o.total, 0);
+  const by = {};
+  orders.forEach(o => { by[o.status] = (by[o.status] || 0) + 1; });
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 864e5);
+    const key = d.toISOString().slice(0, 10);
+    const dayOrders = paid.filter(o => o.date.slice(0, 10) === key);
+    days.push({
+      date: key,
+      label: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      orders: dayOrders.length,
+      revenue: dayOrders.reduce((s, o) => s + o.total, 0)
+    });
+  }
+
+  const products = db.all('products');
+  const sold = {};
+  paid.forEach(o => o.items.forEach(i => { sold[i.pid] = (sold[i.pid] || 0) + i.qty; }));
+  const topProducts = Object.entries(sold)
+    .map(([pid, units]) => ({ ...(db.byId('products', pid) || { name: 'Deleted product', emoji: 'â“' }), units }))
+    .sort((a, b) => b.units - a.units).slice(0, 5);
+
+  const allRatings = paid.flatMap(o => o.items.map(i => i.price));
+  return ok({
+    revenue,
+    orders: orders.length,
+    paidOrders: paid.length,
+    users: db.all('users').length,
+    products: products.length,
+    aov: paid.length ? Math.round(revenue / paid.length) : 0,
+    pendingReviews: db.all('reviews').filter(r => r.status === 'hidden').length,
+    by,
+    days,
+    topProducts,
+    lowStock: products.filter(p => p.stock > 0 && p.stock <= CONFIG.lowStockAt)
+      .sort((a, b) => a.stock - b.stock),
+    outOfStock: products.filter(p => p.stock === 0),
+    catalogueValue: products.reduce((s, p) => s + p.price * p.stock, 0),
+    recentOrders: orders.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
+    avgOrderValue: allRatings.length ? Math.round(revenue / paid.length) : 0
+  });
+});
+
+route('GET', '/api/admin/coupons', [admin], () => ok(db.all('coupons')));
+route('GET', '/api/admin/reviews', [admin], () =>
+  ok(db.all('reviews').sort((a, b) => b.created - a.created).map(r => ({ ...r, product: db.byId('products', r.pid) }))));
+
+route('POST', '/api/admin/coupons', [admin], c => {
+  const body = c.body;
+  const code = (body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  if (code.length < 3) return bad(400, 'Code must be 3-12 letters or digits');
+  if (db.all('coupons').some(x => x.code === code)) return bad(409, 'That code already exists');
+  if (!['percent', 'flat'].includes(body.type)) return bad(400, 'Type must be percent or flat');
+  const value = +body.value;
+  if (!(value > 0)) return bad(400, 'Discount value must be above 0');
+  if (body.type === 'percent' && value > 90) return bad(400, 'Percentage discount cannot exceed 90%');
+  if (!body.expires) return bad(400, 'Pick an expiry date');
+  return ok(db.insert('coupons', {
+    code, type: body.type, value, min: Math.max(0, +body.min || 0),
+    expires: body.expires, note: (body.note || '').trim(), active: true, used: 0
+  }), 201);
+});
+
+route('PUT', '/api/admin/coupons/:id', [admin], c => {
+  const cp = db.byId('coupons', c.params.id);
+  if (!cp) return bad(404, 'Coupon not found');
+  const patch = {};
+  if (c.body.active !== undefined) patch.active = !!c.body.active;
+  if (c.body.expires) patch.expires = c.body.expires;
+  if (c.body.min !== undefined) patch.min = Math.max(0, +c.body.min || 0);
+  if (c.body.note !== undefined) patch.note = c.body.note.trim();
+  return ok(db.update('coupons', cp.id, patch));
+});
+
+route('DELETE', '/api/admin/coupons/:id', [admin], c => {
+  const cp = db.byId('coupons', c.params.id);
+  if (!cp) return bad(404, 'Coupon not found');
+  db.remove('coupons', cp.id);
+  db.all('carts').forEach(x => { if (x.coupon === cp.code) saveCart({ ...x, coupon: null }); });
+  return ok({ deleted: true });
+});
+
+/* ---------------------------------------------------------------------------
+ * 7. UI KERNEL - state, routing, modal, toasts, theme
+ * ------------------------------------------------------------------------- */
+const S = {
+  user: null,
+  cart: { items: [] },
+  view: 'shop',
+  tab: 'dashboard',
+  wish: [],
+  recent: [],
+  coupons: [],
+  lastRemoved: null,
+  co: { step: 1, d: {}, addrId: null },
+  filters: {
+    cat: 'All', brand: '', search: '', sort: 'new', rating: 0,
+    min: 0, max: 0, inStock: 0, page: 1, layout: 'grid', facets: null
+  }
+};
+
+const VIEWS = { shop: shopView, wishlist: wishlistView, orders: ordersView, addresses: addressesView, account: accountView, admin: adminView };
+
+function go(view, patch) {
+  if (!VIEWS[view]) view = 'shop';
+  if (patch) {
+    if (patch.cat !== undefined) S.filters.cat = patch.cat;
+    if (patch.search !== undefined) { S.filters.search = patch.search; $('#q').value = patch.search; }
+    if (patch.sort !== undefined) S.filters.sort = patch.sort;
+    S.filters.page = 1;
+  }
+  S.view = view;
+  render();
+  closeDrawer();
+  $('#main').scrollIntoView({ block: 'start' });
+}
+
+async function render() {
+  navRender();
+  try { await VIEWS[S.view](); }
+  catch (e) { fail(e); }
+}
+
+/* --- theme ----------------------------------------------------------------- */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('se_theme', t); } catch (e) {}
+}
+function toggleTheme() {
+  setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  navRender();
+}
+
+/* --- toasts ---------------------------------------------------------------- */
+/** kind: '' | 'ok' | 'e'. action: { label, fn } - renders an undo affordance. */
+function toast(msg, kind = '', action = null, ms = 3800) {
+  const t = document.createElement('div');
+  t.className = 't' + (kind ? ' ' + kind : '');
+  t.innerHTML = `<span class="msg">${esc(msg)}</span>`;
+  if (action) {
+    const b = document.createElement('button');
+    b.textContent = action.label;
+    b.onclick = () => { t.remove(); action.fn(); };
+    t.append(b);
+  }
+  $('#toasts').append(t);
+  const kill = setTimeout(() => t.remove(), ms);
+  t.addEventListener('mouseenter', () => clearTimeout(kill));
+  return t;
+}
+const fail = e => toast(e.message || 'Something went wrong', 'e');
+const done = msg => toast(msg, 'ok');
+
+/* --- modal with focus trap ------------------------------------------------- */
+let lastFocus = null;
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+function modal(html, { wide = false, narrow = false, labelledBy = 'mdtitle' } = {}) {
+  closeModal();
+  lastFocus = document.activeElement;
+  const o = document.createElement('div');
+  o.className = 'ov';
+  o.id = 'ov';
+  o.innerHTML = `<div class="md ${wide ? 'wide' : ''} ${narrow ? 'narrow' : ''}" role="dialog" aria-modal="true" aria-labelledby="${labelledBy}">${html}</div>`;
+  o.addEventListener('mousedown', e => { if (e.target === o) closeModal(); });
+  document.body.append(o);
+  const box = o.querySelector('.md');
+  const first = box.querySelector(FOCUSABLE);
+  (first || box).focus({ preventScroll: true });
+  return o;
+}
+
+function closeModal() {
+  const o = $('#ov');
+  if (!o) return;
+  o.remove();
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+  lastFocus = null;
+}
+
+/** Promise-based replacement for window.confirm so destructive actions match the app's look. */
+function confirmModal({ title, body = '', okLabel = 'Confirm', danger = true, onOk }) {
+  return new Promise(resolve => {
+    const o = modal(`
+      <h2 id="mdtitle">${esc(title)}</h2>
+      <p class="mut">${esc(body)}</p>
+      <div class="mfoot">
+        <button class="btn" data-a="no">Cancel</button>
+        <button class="btn ${danger ? 'd' : 'p'}" data-a="yes">${esc(okLabel)}</button>
+      </div>`, { narrow: true });
+    o.querySelector('[data-a=no]').onclick = () => { closeModal(); resolve(false); };
+    o.querySelector('[data-a=yes]').onclick = async () => { closeModal(); resolve(true); await onOk?.(); };
+  });
+}
+
+/* --- nav ------------------------------------------------------------------- */
+function navRender() {
+  const cartN = (S.cart.items || []).reduce((s, i) => s + i.qty, 0);
+  const wishN = S.wish.length;
+  $('#navr').innerHTML = `
+    <button class="ia" onclick="toggleTheme()" aria-label="Switch to ${document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'} theme" title="Toggle theme">${document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263D'}</button>
+    <button class="ia" onclick="helpModal()" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">?</button>
+    ${S.user ? `
+      <button class="ia" onclick="go('wishlist')" aria-label="Wishlist, ${wishN} items" title="Wishlist">${wishN ? `<span class="badge" style="position:absolute;top:-6px;right:-4px;margin:0">${wishN}</span>` : ''}\u2764</button>
+      ${S.user.role === 'admin' ? `<button class="btn sm" onclick="go('admin')">Admin</button>` : ''}
+      <button class="btn sm" onclick="go('orders')"><span class="lbl">Orders</span></button>
+      <button class="btn sm" onclick="go('account')"><span class="lbl">${esc(S.user.name.split(' ')[0])}</span></button>
+      <button class="btn sm d" onclick="logout()">Log out</button>
+    ` : `<button class="btn sm p" onclick="loginModal(false)">Log in</button>`}
+    <button class="btn p cartbtn" onclick="toggleDrawer()" aria-label="Open cart, ${cartN} items">Cart<span class="badge">${cartN}</span></button>`;
+}
+
+async function loadCart() {
+  try { S.cart = await api('GET', '/api/cart'); } catch (e) { S.cart = { items: [] }; }
+  navRender();
+  if ($('#drawer').classList.contains('open')) drawerRender();
+}
+async function loadWish() {
+  try { S.wish = (await api('GET', '/api/wishlist')).items; } catch (e) { S.wish = []; }
+  navRender();
+}
+async function loadRecent() {
+  try { S.recent = (await api('GET', '/api/recent')).items; } catch (e) { S.recent = []; }
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. STOREFRONT
+ * ------------------------------------------------------------------------- */
+const SORTS = [['new', 'Newest first'], ['rating', 'Top rated'], ['reviews', 'Most reviewed'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['name', 'Name A-Z']];
+const RATINGS = [['0', 'Any rating'], ['3', '3\u2605 & up'], ['4', '4\u2605 & up'], ['4.5', '4.5\u2605 & up']];
+
+function shopView() {
+  const f = S.filters;
+  $('#main').innerHTML = `
+    <section class="hero">
+      <h1>Everyday gear, delivered fast.</h1>
+      <p>Free shipping above ${inr(CONFIG.freeShippingAbove)}. Use coupon <b>SAVE10</b> for 10% off your first order.</p>
+      <div class="row wrap">
+        <button class="btn lg" onclick="document.getElementById('results').scrollIntoView({behavior:'smooth'})">Browse products</button>
+        <button class="btn lg g" onclick="go('shop',{cat:'Electronics'})">Shop electronics</button>
+      </div>
+      <div class="stats">
+        <div><b>${db.all('products').length}</b><span>Products in stock</span></div>
+        <div><b>${db.all('orders').length}</b><span>Orders placed</span></div>
+        <div><b>${CONFIG.taxRate * 100}%</b><span>GST included</span></div>
+      </div>
+    </section>
+
+    <div class="promo">
+      <div><span class="pe" aria-hidden="true">\u{1F69A}</span><div><b>Free delivery over ${inr(CONFIG.freeShippingAbove)}</b><span>Flat ${inr(CONFIG.shippingFee)} below that</span></div></div>
+      <div><span class="pe" aria-hidden="true">\u{1F4E6}</span><div><b>Dispatch in 24 hours</b><span>Delivered in 2-4 business days</span></div></div>
+      <div><span class="pe" aria-hidden="true">\u{1F504}</span><div><b>7-day easy returns</b><span>Cancel free of charge while unshipped</span></div></div>
+      <div><span class="pe" aria-hidden="true">\u{1F512}</span><div><b>Secure demo checkout</b><span>No real payment is processed</span></div></div>
+    </div>
+
+    <section class="shop" id="results">
+      <aside class="filters" id="filters" aria-label="Product filters">
+        <div class="fgroup">
+          <h3>Category</h3>
+          <div class="flist" id="fcat"></div>
+        </div>
+        <div class="fgroup">
+          <h3>Max price <output id="maxout"></output></h3>
+          <input type="range" id="fmax" min="0" max="14000" step="100" aria-label="Maximum price">
+          <div class="form2" style="gap:8px">
+            <div><label for="fmin">Min</label><input type="number" id="fmin" min="0" placeholder="0"></div>
+            <div><label for="fmaxn">Max</label><input type="number" id="fmaxn" min="0" placeholder="Any"></div>
+          </div>
+        </div>
+        <div class="fgroup">
+          <h3>Brand</h3>
+          <div class="fchips" id="fbrand"></div>
+        </div>
+        <div class="fgroup">
+          <h3>Rating</h3>
+          <div class="fchips" id="frate"></div>
+        </div>
+        <div class="fgroup">
+          <label class="fopt"><input type="checkbox" id="fstock"><span>In stock only</span></label>
+        </div>
+        <button class="btn full" onclick="clearFilters()">Clear all filters</button>
+      </aside>
+
+      <div>
+        <div class="tools">
+          <button class="btn fbtn" onclick="document.getElementById('filters').classList.toggle('open')">\u2630 Filters</button>
+          <div class="grow"></div>
+          <label for="sort" class="sr">Sort products</label>
+          <select id="sort">${SORTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+          <div class="seg" role="group" aria-label="Layout">
+            <button id="lay-g" onclick="setLayout('grid')" aria-label="Grid view">\u25A6</button>
+            <button id="lay-l" onclick="setLayout('list')" aria-label="List view">\u2630</button>
+          </div>
+        </div>
+        <div class="activef" id="activef"></div>
+        <div class="resultbar">
+          <span class="mut" id="count" aria-live="polite">Loading products&hellip;</span>
+          <span class="tiny" id="rangehint"></span>
+        </div>
+        <div class="grid" id="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+        <div class="pg" id="pg"></div>
+        <div id="rails"></div>
+      </div>
+    </section>`;
+
+  $('#sort').value = f.sort;
+  $('#lay-g').classList.toggle('on', f.layout === 'grid');
+  $('#lay-l').classList.toggle('on', f.layout === 'list');
+  $('#grid').classList.toggle('list', f.layout === 'list');
+  $('#fmin').value = f.min || '';
+  $('#fmaxn').value = f.max || '';
+  $('#fmax').value = f.max || 2000;
+  $('#fmax').max = f.facets ? f.facets.priceBounds.max : 14000;
+  $('#fstock').checked = !!+f.inStock;
+  syncFilterLabels();
+
+  $('#sort').onchange = e => { f.sort = e.target.value; f.page = 1; loadProducts(); };
+  $('#fmax').oninput = e => { f.max = +e.target.value; $('#fmaxn').value = e.target.value || ''; syncFilterLabels(); };
+  $('#fmax').onchange = () => { f.page = 1; loadProducts(); };
+  $('#fmin').onchange = e => { f.min = +e.target.value || 0; f.page = 1; loadProducts(); };
+  $('#fmaxn').onchange = e => { f.max = +e.target.value || 0; $('#fmax').value = f.max || 0; f.page = 1; loadProducts(); };
+  $('#fstock').onchange = e => { f.inStock = e.target.checked ? 1 : 0; f.page = 1; loadProducts(); };
+
+  loadProducts();
+  loadRecent().then(renderRails);
+}
+
+function syncFilterLabels() {
+  const f = S.filters;
+  const out = $('#maxout'); if (out) out.textContent = f.max ? inr(f.max) : 'any';
+  $('#frate').innerHTML = RATINGS.map(([v, l]) => `<button class="chip ${+f.rating === +v ? 'on' : ''}" onclick="setFilter('rating','${v}')">${l}</button>`).join('');
+}
+
+function setFilter(key, val) {
+  S.filters[key] = val;
+  S.filters.page = 1;
+  loadProducts();
+}
+function setLayout(l) {
+  S.filters.layout = l;
+  try { localStorage.setItem('se_layout', l); } catch (e) {}
+  $('#lay-g').classList.toggle('on', l === 'grid');
+  $('#lay-l').classList.toggle('on', l === 'list');
+  $('#grid').classList.toggle('list', l === 'list');
+}
+function clearFilters() {
+  Object.assign(S.filters, { cat: 'All', brand: '', rating: 0, min: 0, max: 0, inStock: 0, page: 1 });
+  $('#fmin').value = ''; $('#fmaxn').value = ''; $('#fmax').value = 0; $('#fstock').checked = false;
+  syncFilterLabels();
+  loadProducts();
+}
+function setPage(p) {
+  S.filters.page = p;
+  loadProducts().then(() => $('#results').scrollIntoView({ behavior: 'smooth' }));
+}
+
+/** Shared product-card markup so grid, rails and lists stay visually identical. */
+function cardHtml(p, { rail = false } = {}) {
+  const off = p.baseRating && p.price > 0 && p.stock ? Math.round((1 - p.price / (p.baseRating * 1200)) * 100) : 0;
+  const stockTag = p.stock === 0 ? '<span class="tag bad">Sold out</span>'
+    : p.stock <= CONFIG.lowStockAt ? `<span class="tag warn">Only ${p.stock} left</span>`
+    : '<span class="tag ok">In stock</span>';
+  const isWish = S.wish.some(w => w.id == p.id);
+  return rail ? `
+    <button class="rcard" onclick="detail(${p.id})">
+      <span class="re">${esc(p.emoji || '\u{1F4E6}')}</span>
+      <b>${esc(p.name)}</b>
+      <span class="mut">${esc(p.brand || p.category)}</span>
+      <span class="strong">${inr(p.price)}</span>
+    </button>` : `
+    <article class="card">
+      <div class="flag">${p.stock === 0 ? '<span class="tag bad">Sold out</span>' : p.stock <= CONFIG.lowStockAt ? `<span class="tag warn">Only ${p.stock} left</span>` : ''}${p.reviewCount ? '<span class="tag gold">Reviewed</span>' : ''}</div>
+      <button class="fav ${isWish ? 'on' : ''}" onclick="event.stopPropagation();toggleWish(${p.id})" aria-pressed="${isWish}" aria-label="Save ${esc(p.name)} to wishlist">${isWish ? '\u2764' : '\u2661'}</button>
+      <button class="media" onclick="detail(${p.id})" aria-label="View ${esc(p.name)}">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${esc(p.emoji || '\u{1F4E6}')}'))">` : esc(p.emoji || '\u{1F4E6}')}</button>
+      <div class="cb">
+        <span class="mt">${esc(p.brand || '')} &middot; ${esc(p.category)}</span>
+        <button class="nm" onclick="detail(${p.id})" style="text-align:left">${esc(p.name)}</button>
+        <span class="row" style="gap:8px">${stars(p.rating)}<span class="tiny">${p.rating.toFixed(1)} (${p.reviewCount || 0})</span></span>
+        <p class="desc mut" style="margin:4px 0 0;font-size:.84rem;display:none">${esc(p.desc)}</p>
+        <div class="ft">
+          <div class="grow"><span class="price">${inr(p.price)}</span>${off > 8 ? `<br><span class="strike">${inr(Math.round(p.baseRating * 1200))}</span> <span class="tag ok">${off}% off</span>` : ''}</div>
+          ${stockTag}
+        </div>
+        <button class="btn p" ${p.stock ? '' : 'disabled'} onclick="addToCart(${p.id})">${p.stock ? 'Add to cart' : 'Sold out'}</button>
+      </div>
+    </article>`;
+}
+
+async function loadProducts() {
+  const f = S.filters;
+  const grid = $('#grid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="sk"></div>'.repeat(8);
+  try {
+    const qs = new URLSearchParams({
+      search: f.search, category: f.cat, brand: f.brand, min: f.min, max: f.max,
+      rating: f.rating, inStock: f.inStock, sort: f.sort, page: f.page, limit: 12
+    });
+    const r = await api('GET', '/api/products?' + qs);
+    f.facets = r;
+
+    $('#count').innerHTML = r.total
+      ? `<b>${r.total}</b> product${r.total === 1 ? '' : 's'} found${f.search ? ` for &ldquo;${esc(f.search)}&rdquo;` : ''}`
+      : 'Nothing matched those filters';
+    $('#rangehint').textContent = r.total ? `Showing ${(r.page - 1) * 12 + 1}\u2013${Math.min(r.page * 12, r.total)} of ${r.total}` : '';
+
+    $('#fcat').innerHTML = r.categories.map(c => `
+      <label class="fopt">
+        <input type="radio" name="cat" ${c === f.cat ? 'checked' : ''} onchange="setFilter('cat','${esc(c)}')">
+        <span>${esc(c === 'All' ? 'All categories' : c)}</span><span class="n">${c === 'All' ? r.counts ? Object.values(r.counts).reduce((a, b) => a + b, 0) : r.total : (r.counts[c] || 0)}</span>
+      </label>`).join('');
+    $('#fbrand').innerHTML = r.brands.map(b => `<button class="chip ${f.brand === b ? 'on' : ''}" onclick="setFilter('brand','${f.brand === b ? '' : esc(b)}')">${esc(b)}</button>`).join('');
+    syncFilterLabels();
+
+    const chips = [];
+    if (f.search) chips.push(['search', '', `Search: ${f.search}`]);
+    if (f.cat !== 'All') chips.push(['cat', 'All', f.cat]);
+    if (f.brand) chips.push(['brand', '', f.brand]);
+    if (f.rating) chips.push(['rating', '0', `${f.rating}\u2605 & up`]);
+    if (f.min) chips.push(['min', 0, `Min ${inr(f.min)}`]);
+    if (f.max) chips.push(['max', 0, `Max ${inr(f.max)}`]);
+    if (f.inStock) chips.push(['inStock', 0, 'In stock only']);
+    $('#activef').innerHTML = chips.length
+      ? chips.map(([k, v, l]) => `<button class="chip" onclick="setFilter('${k}','${v}')" aria-label="Remove filter ${esc(l)}">${l} \u00d7</button>`).join('')
+      + `<button class="chip" onclick="clearFilters()">Clear all</button>` : '';
+
+    grid.innerHTML = r.items.length
+      ? r.items.map(p => cardHtml(p)).join('')
+      : `<div class="empty"><span class="ee" aria-hidden="true">\u{1F50D}</span><h3>No products found</h3><p>Try a broader search, a different category, or clear the filters.</p><button class="btn p" onclick="clearFilters()">Clear all filters</button></div>`;
+
+    $('#pg').innerHTML = r.pages > 1
+      ? Array.from({ length: r.pages }, (_, i) => `<button class="chip ${i + 1 === r.page ? 'on' : ''}" onclick="setPage(${i + 1})"${i + 1 === r.page ? ' aria-current="page"' : ''}>${i + 1}</button>`).join('')
+      : '';
+
+    if (f.layout === 'list') $$('.card .desc').forEach(d => { d.style.display = '-webkit-box'; });
+  } catch (e) {
+    grid.innerHTML = `<div class="empty"><span class="ee" aria-hidden="true">\u26A0</span><h3>Could not load products</h3><p>${esc(e.message)}</p><button class="btn p" onclick="loadProducts()">Retry</button></div>`;
+  }
+}
+
+/** Recently viewed + a "top rated" recommendation rail. */
+async function renderRails() {
+  const box = $('#rails');
+  if (!box) return;
+  const top = (S.filters.facets?.items?.length ? await api('GET', '/api/products?sort=rating&limit=6') : { items: [] }).items
+    .filter(p => !S.recent.some(r => r.id == p.id));
+  box.innerHTML = [
+    S.recent.length ? `<section class="sec"><div class="shead"><div><h3>Recently viewed</h3><p>Pick up where you left off</p></div><button class="btn sm d" onclick="clearRecent()">Clear</button></div><div class="rail">${S.recent.map(p => cardHtml(p, { rail: true })).join('')}</div></section>` : '',
+    top.length ? `<section class="sec"><div class="shead"><div><h3>Top rated right now</h3><p>Highest scores across the catalogue</p></div></div><div class="rail">${top.map(p => cardHtml(p, { rail: true })).join('')}</div></section>` : ''
+  ].join('');
+  box.querySelectorAll('.desc').forEach(d => { d.style.display = 'none'; });
+}
+
+async function clearRecent() {
+  await api('POST', '/api/recent', { productId: -1 }).catch(() => {});
+  const d = db.byKey('recent', 'uid', S.user ? S.user.id : 'guest');
+  db.put('recent', 'uid', { uid: d ? d.uid : 'guest', pids: [] });
+  S.recent = [];
+  done('Recently viewed cleared');
+  renderRails();
+}
+
+/* --- search autocomplete ---------------------------------------------------- */
+let sugIdx = -1;
+const search = debounce(v => {
+  S.filters.search = v;
+  S.filters.page = 1;
+  if (S.view !== 'shop') { go('shop'); } else { loadProducts(); }
+}, 260);
+
+function sugRender(list, q) {
+  const box = $('#sug');
+  if (!list.length) { box.hidden = true; $('#q').setAttribute('aria-expanded', 'false'); return; }
+  box.innerHTML = list.map((s, i) => `
+    <button role="option" id="sug${i}" aria-selected="false" data-name="${esc(s.name)}"
+            onclick="pickSug(${s.id},'${esc(s.name)}')">
+      <span class="se">${esc(s.emoji || '\u{1F4E6}')}</span>
+      <span class="sn"><b>${hl(s.name, q)}</b><span>${esc(s.brand)} &middot; ${s.stock ? inr(s.price) : 'Sold out'}</span></span>
+      ${s.stock ? '' : '<span class="tag bad">Sold out</span>'}
+    </button>`).join('');
+  box.hidden = false;
+  $('#q').setAttribute('aria-expanded', 'true');
+  sugIdx = -1;
+}
+
+$('#q').addEventListener('input', async e => {
+  const v = e.target.value.trim();
+  if (!v) { sugRender([], v); search(''); return; }
+  try {
+    const r = await api('GET', '/api/products/suggest?q=' + encodeURIComponent(v));
+    sugRender(r.suggestions, v);
+  } catch (err) { sugRender([], v); }
+  search(v);
+});
+$('#q').addEventListener('focus', async e => {
+  if (e.target.value.trim().length > 1) {
+    try { sugRender((await api('GET', '/api/products/suggest?q=' + encodeURIComponent(e.target.value.trim()))).suggestions, e.target.value.trim()); } catch (err) {}
+  }
+});
+$('#q').addEventListener('keydown', e => {
+  const box = $('#sug');
+  const opts = box.hidden ? [] : $$('button', box);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!opts.length) return;
+    e.preventDefault();
+    sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+    opts.forEach((o, i) => o.setAttribute('aria-selected', i === sugIdx));
+    opts[sugIdx].scrollIntoView({ block: 'nearest' });
+    $('#q').setAttribute('aria-activedescendant', opts[sugIdx].id);
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const picked = sugIdx > -1 ? opts[sugIdx] : null;
+    const name = picked ? picked.dataset.name : e.target.value.trim();
+    pickSug(null, name);
+  }
+  if (e.key === 'Escape') { box.hidden = true; $('#q').setAttribute('aria-expanded', 'false'); }
+});
+function pickSug(id, name) {
+  $('#sug').hidden = true;
+  $('#q').setAttribute('aria-expanded', 'false');
+  if (id != null) { $('#q').value = ''; detail(id); return; }
+  $('#q').value = name;
+  S.filters.search = name;
+  S.filters.page = 1;
+  go('shop');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.searchwrap')) { const b = $('#sug'); if (b) { b.hidden = true; $('#q').setAttribute('aria-expanded', 'false'); } }
+});
+
+/* --- product detail --------------------------------------------------------- */
+async function detail(id) {
+  let p;
+  try { p = await api('GET', '/api/products/' + id); }
+  catch (e) { return fail(e); }
+
+  api('POST', '/api/recent', { productId: id }).then(() => loadRecent()).catch(() => {});
+  const inCart = S.cart.items.find(i => i.pid == p.id);
+  const maxQ = Math.min(p.stock, CONFIG.maxQtyPerItem);
+  const isWish = p.inWishlist || S.wish.some(w => w.id == p.id);
+
+  modal(`
+    <div class="mtop">
+      <div class="pd" style="width:100%">
+        <div class="pm">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.parentElement.textContent='${esc(p.emoji || '\u{1F4E6}')}'">` : esc(p.emoji || '\u{1F4E6}')}</div>
+        <div>
+          <div class="row wrap" style="gap:6px;margin-bottom:8px">
+            <span class="tag info">${esc(p.category)}</span>
+            ${p.brand ? `<span class="tag">${esc(p.brand)}</span>` : ''}
+            ${p.stock === 0 ? '<span class="tag bad">Sold out</span>' : p.stock <= CONFIG.lowStockAt ? `<span class="tag warn">Only ${p.stock} left</span>` : '<span class="tag ok">In stock</span>'}
+          </div>
+          <h2 id="mdtitle" style="margin-bottom:6px">${esc(p.name)}</h2>
+          <div class="row" style="gap:10px;margin-bottom:8px">
+            ${stars(p.rating)}
+            <span class="mut">${p.rating.toFixed(1)} \u00b7 ${p.reviewCount || 0} review${p.reviewCount === 1 ? '' : 's'}</span>
+          </div>
+          <p class="mut">${esc(p.desc)}</p>
+          <div class="row" style="gap:12px;margin-bottom:var(--sp-3)">
+            <span class="price" style="font-size:1.7rem">${inr(p.price)}</span>
+            <span class="mut">incl. ${inr(Math.round(p.price * CONFIG.taxRate))} GST</span>
+          </div>
+          <dl class="spec">
+            <dt>Delivery</dt><dd>Arrives by ${p.stock ? eta() : '\u2014'}</dd>
+            <dt>Stock</dt><dd>${p.stock} unit${p.stock === 1 ? '' : 's'}</dd>
+            <dt>Per order limit</dt><dd>${maxQ}</dd>
+            <dt>Returns</dt><dd>Free within 7 days of delivery</dd>
+          </dl>
+          <div class="row wrap" style="gap:8px">
+            <div class="q"><button onclick="detailQty(${id},-1)" aria-label="Decrease quantity">\u2212</button><span class="n" id="dq">1</span><button onclick="detailQty(${id},1)" aria-label="Increase quantity" ${p.stock < 2 ? 'disabled' : ''}>+</button></div>
+            <button class="btn p grow" ${p.stock ? '' : 'disabled'} onclick="detailAdd(${id})" style="flex:1">${inCart ? `Add more (${inCart.qty} in cart)` : 'Add to cart'}</button>
+          </div>
+          <div class="row wrap" style="gap:8px;margin-top:8px">
+            <button class="btn ${isWish ? 'd' : ''}" onclick="detailWish(${id},${!isWish})">${isWish ? '\u2764 Saved' : '\u2661 Save for later'}</button>
+            <button class="btn" onclick="detailBuy(${id})" ${p.stock ? '' : 'disabled'}>Buy now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <section class="rv">
+      <div class="shead"><div><h3>Customer reviews</h3><p>Ratings come from verified ShopEase accounts</p></div>
+        <button class="btn p" onclick="reviewForm(${id})">Write a review</button></div>
+      <div id="rvs"></div>
+    </section>
+    ${p.related.length ? `<section class="rv"><h3>You may also like</h3><div class="rail" style="margin-top:12px">${p.related.map(x => cardHtml(x, { rail: true })).join('')}</div></section>` : ''}
+  `, { wide: true });
+
+  reviewList(id, 1);
+}
+
+let dq = 1;
+function detailQty(id, dir) {
+  dq = clamp(dq + dir, 1, Math.min(db.byId('products', id)?.stock || 1, CONFIG.maxQtyPerItem));
+  $('#dq').textContent = dq;
+}
+async function detailAdd(id) {
+  await addToCart(id, dq);
+  closeModal();
+}
+function detailBuy(id) {
+  closeModal();
+  addToCart(id, dq).then(() => { toggleDrawer(true); startCheckout(); });
+}
+async function detailWish(id, next) {
+  await setWish(id, next);
+  const b = $('[onclick^="detailWish"]');
+  if (b) { b.className = 'btn ' + (next ? 'd' : ''); b.textContent = next ? '\u2764 Saved' : '\u2661 Save for later'; }
+  loadProducts();
+}
+
+/* --- reviews ---------------------------------------------------------------- */
+async function reviewList(pid, page = 1) {
+  const box = $('#rvs');
+  if (!box) return;
+  box.innerHTML = '<div class="sk sm"></div><div class="sk sm" style="width:70%"></div>';
+  try {
+    const r = await api('GET', `/api/products/${pid}/reviews?page=${page}`);
+    const max = Math.max(1, ...r.dist.map(d => d.n));
+    box.innerHTML = `
+      <div class="row wrap" style="gap:var(--sp-5);align-items:flex-start;margin-bottom:var(--sp-4)">
+        <div class="center">
+          <div class="rmean">${r.summary.average.toFixed(1)}</div>
+          ${stars(r.summary.average)}
+          <div class="tiny">${r.summary.count} review${r.summary.count === 1 ? '' : 's'}</div>
+        </div>
+        <div class="grow" style="min-width:200px">${r.dist.map(d => `
+          <div class="b"><span class="t">${d.star}\u2605</span><span class="track"><i style="width:${(d.n / max) * 100}%"></i></span><span class="n">${d.n}</span></div>`).join('')}
+        </div>
+      </div>
+      ${r.items.length ? r.items.map(x => `
+        <div class="rvitem">
+          <div class="rvhead">
+            <span class="avatar">${avatarOf(x.name)}</span>
+            <div class="grow"><b>${esc(x.name)}</b>${x.verified ? ' <span class="tag ok">Verified purchase</span>' : ''}<div class="tiny">${relTime(x.created)}</div></div>
+            ${stars(x.rating)}
+            ${(S.user && (S.user.id === x.uid || S.user.role === 'admin')) ? `<button class="btn sm d" onclick="delReview(${x.id},${pid})">Delete</button>` : ''}
+          </div>
+          <b>${esc(x.title)}</b>
+          <p class="mut" style="margin:4px 0 0">${esc(x.body)}</p>
+        </div>`).join('') : '<div class="empty"><span class="ee">\u{1F4DD}</span><h3>No reviews yet</h3><p>Be the first to share your experience.</p></div>'}
+      ${r.pages > 1 ? `<div class="pg">${Array.from({ length: r.pages }, (_, i) => `<button class="chip ${i + 1 === page ? 'on' : ''}" onclick="reviewList(${pid},${i + 1})">${i + 1}</button>`).join('')}</div>` : ''}`;
+  } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+function reviewForm(pid) {
+  if (!S.user) { toast('Log in to write a review', 'e'); return loginModal(false); }
+  modal(`
+    <h2 id="mdtitle">Write a review</h2>
+    <p class="mut" id="rvprod"></p>
+    <div class="field">
+      <label id="rl">Your rating</label>
+      <div class="rating-input" role="radiogroup" aria-labelledby="rl">
+        <input type="radio" name="rv" id="rv5" value="5" checked><label for="rv5" title="5 stars">\u2605</label>
+        <input type="radio" name="rv" id="rv4" value="4"><label for="rv4" title="4 stars">\u2605</label>
+        <input type="radio" name="rv" id="rv3" value="3"><label for="rv3" title="3 stars">\u2605</label>
+        <input type="radio" name="rv" id="rv2" value="2"><label for="rv2" title="2 stars">\u2605</label>
+        <input type="radio" name="rv" id="rv1" value="1"><label for="rv1" title="1 star">\u2605</label>
+      </div>
+    </div>
+    <div class="field"><label for="rvt">Headline</label><input id="rvt" maxlength="70" placeholder="Sum it up in a few words"></div>
+    <div class="field"><label for="rvb">Your review</label><textarea id="rvb" maxlength="600" placeholder="What did you like or dislike? How did you use it?"></textarea></div>
+    <div class="err" id="rverr"></div>
+    <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn p" onclick="submitReview(${pid})">Post review</button></div>`, { narrow: true });
+  api('GET', '/api/products/' + pid).then(p => { const el = $('#rvprod'); if (el) el.textContent = p.name; });
+}
+
+async function submitReview(pid) {
+  const body = { rating: +$('input[name=rv]:checked').value, title: $('#rvt').value, body: $('#rvb').value };
+  try {
+    await api('POST', `/api/products/${pid}/reviews`, body);
+    closeModal();
+    done('Thanks! Your review is live.');
+    loadProducts();
+    const p = await api('GET', '/api/products/' + pid);
+    const m = $('#rvs');
+    if (m) reviewList(pid, 1);
+    if (p) { /* keep detail header stats fresh */ }
+  } catch (e) { $('#rverr').textContent = e.message; }
+}
+
+async function delReview(rid, pid) {
+  const yes = await confirmModal({ title: 'Delete this review?', body: 'This cannot be undone.', okLabel: 'Delete' });
+  if (!yes) return;
+  try { await api('DELETE', '/api/reviews/' + rid); done('Review deleted'); reviewList(pid, 1); loadProducts(); }
+  catch (e) { fail(e); }
+}
+
+/* --- cart actions ----------------------------------------------------------- */
+async function addToCart(id, qty = 1) {
+  try {
+    S.cart = await api('POST', '/api/cart', { productId: id, qty });
+    const p = (S.cart.items.find(i => i.pid == id) || {}).p;
+    done(`${p ? p.name : 'Item'} added to cart`);
+    navRender();
+    drawerRender();
+    return true;
+  } catch (e) { fail(e); return false; }
+}
+
+async function setWish(id, next) {
+  try {
+    const r = next
+      ? await api('POST', '/api/wishlist', { productId: id })
+      : await api('DELETE', '/api/wishlist/' + id);
+    S.wish = (await api('GET', '/api/wishlist')).items;
+    navRender();
+    done(next ? 'Saved to your wishlist' : 'Removed from wishlist');
+    if (S.view === 'wishlist') wishlistView();
+    else loadProducts();
+    return true;
+  } catch (e) { fail(e); return false; }
+}
+function toggleWish(id) {
+  const has = S.wish.some(w => w.id == id);
+  setWish(id, !has);
+}
+
+/* ---------------------------------------------------------------------------
+ * 9. CART DRAWER
+ * ------------------------------------------------------------------------- */
+function toggleDrawer(force) {
+  const d = $('#drawer');
+  const open = force !== undefined ? force : !d.classList.contains('open');
+  d.classList.toggle('open', open);
+  $('#scrim').classList.toggle('on', open);
+  if (open) { drawerRender(); setTimeout(() => $('[aria-label="Close cart"]')?.focus(), 60); }
+  else { S.focusBeforeDrawer = document.activeElement; }
+}
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('on'); }
+
+function drawerRender() {
+  const c = S.cart;
+  const it = c.items || [];
+  const gap = c.freeShipGap || 0;
+  const pct = clamp(100 - (gap / CONFIG.freeShippingAbove) * 100, 0, 100);
+
+  $('#drawer').innerHTML = `
+    <header>
+      <h2 id="drawerTitle">Your cart ${it.length ? `<span class="badge">${it.reduce((s, i) => s + i.qty, 0)}</span>` : ''}</h2>
+      <button class="ia" onclick="toggleDrawer(false)" aria-label="Close cart">\u2715</button>
+    </header>
+    ${it.length ? `
+      ${gap > 0
+        ? `<div class="freeship">Add <b>${inr(gap)}</b> more for free shipping
+            <span class="track"><i style="width:${pct}%"></i></span></div>`
+        : `<div class="freeship" style="border-color:var(--ok);background:var(--ok-soft)">\u2713 You have unlocked <b>free delivery</b></div>`}
+      <div class="items">
+        ${it.map(i => `
+          <div class="irow">
+            <span class="em">${esc(i.p.emoji || '\u{1F4E6}')}</span>
+            <div class="g">
+              <b>${esc(i.p.name)}</b>
+              <div class="tiny">${inr(i.p.price)} each ${i.qty >= Math.min(i.p.stock, CONFIG.maxQtyPerItem) ? `<span class="tag warn">Max</span>` : ''}</div>
+              <span class="q" style="margin-top:5px">
+                <button onclick="setQty(${i.pid},${i.qty - 1})" aria-label="Decrease quantity of ${esc(i.p.name)}">\u2212</button>
+                <span class="n">${i.qty}</span>
+                <button onclick="setQty(${i.pid},${i.qty + 1})" aria-label="Increase quantity of ${esc(i.p.name)}" ${i.qty >= Math.min(i.p.stock, CONFIG.maxQtyPerItem) ? 'disabled' : ''}>+</button>
+              </span>
+            </div>
+            <div class="stack" style="text-align:right;gap:8px">
+              <b>${inr(i.p.price * i.qty)}</b>
+              <button class="btn sm d" onclick="removeItem(${i.pid})" aria-label="Remove ${esc(i.p.name)} from cart">Remove</button>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div style="padding-top:12px">
+        ${c.coupon
+          ? `<div class="row between" style="background:var(--ok-soft);border-radius:var(--r-sm);padding:9px 12px;margin-bottom:10px">
+               <span class="strong" style="font-size:.9rem">\u{1F3AF} ${esc(c.coupon)} applied</span>
+               <button class="btn sm d" onclick="dropCoupon()">Remove</button>
+             </div>`
+          : `<div class="coup"><input id="cp" placeholder="Coupon code" aria-label="Coupon code" style="text-transform:uppercase"><button class="btn" onclick="applyCoupon()">Apply</button></div>
+             <div class="row wrap" style="gap:5px;margin-bottom:10px">${(S.coupons || []).slice(0, 4).map(x => `<button class="chip" onclick="useCoupon('${esc(x.code)}')" title="${esc(x.note || '')}">${esc(x.code)}</button>`).join('')}</div>`}
+        <div class="sum">
+          <div><span>Subtotal</span><span>${inr(c.sub)}</span></div>
+          ${c.disc ? `<div><span>Discount (${esc(c.coupon)})</span><span style="color:var(--ok)">\u2212${inr(c.disc)}</span></div>` : ''}
+          ${c.couponError ? `<div><span class="tiny" style="color:var(--bad)">${esc(c.couponError)}</span></div>` : ''}
+          <div><span>GST ${(CONFIG.taxRate * 100).toFixed(0)}%</span><span>${inr(c.tax)}</span></div>
+          <div><span>Shipping</span><span>${c.ship ? inr(c.ship) : '<span style="color:var(--ok)">Free</span>'}</span></div>
+          <div class="tot"><span>Total</span><span>${inr(c.total)}</span></div>
+        </div>
+        <button class="btn p lg full" style="margin-top:12px" onclick="startCheckout()">Checkout \u2192</button>
+        <p class="tiny center" style="margin-top:8px">Delivery by ${esc(c.eta || eta())} &middot; taxes included</p>
+      </div>`
+    : `<div class="empty"><span class="ee">\u{1F6D2}</span><h3>Your cart is empty</h3><p>Add something you like and it will show up here.</p><button class="btn p" onclick="toggleDrawer(false);go('shop')">Browse products</button></div>`}`;
+}
+
+async function setQty(pid, qty) {
+  try {
+    S.cart = qty < 1 ? await api('DELETE', '/api/cart/' + pid) : await api('PUT', '/api/cart/' + pid, { qty });
+    navRender(); drawerRender();
+  } catch (e) { fail(e); }
+}
+
+async function removeItem(pid) {
+  try {
+    const before = S.cart.items.find(i => i.pid == pid);
+    const r = await api('DELETE', '/api/cart/' + pid);
+    S.cart = r;
+    navRender(); drawerRender();
+    toast(`${before ? before.p.name : 'Item'} removed`, '', {
+      label: 'Undo',
+      fn: async () => {
+        try { S.cart = await api('POST', '/api/cart', { productId: pid, qty: before ? before.qty : 1 }); navRender(); drawerRender(); done('Restored to cart'); }
+        catch (e) { fail(e); }
+      }
+    }, 6000);
+  } catch (e) { fail(e); }
+}
+
+async function applyCoupon() {
+  const el = $('#cp');
+  if (!el.value.trim()) { toast('Enter a coupon code', 'e'); return; }
+  await useCoupon(el.value);
+}
+async function useCoupon(code) {
+  try {
+    S.cart = await api('POST', '/api/coupons/apply', { code });
+    drawerRender();
+    done(`Coupon ${code.toUpperCase()} applied`);
+  } catch (e) { fail(e); }
+}
+async function dropCoupon() {
+  try { S.cart = await api('DELETE', '/api/cart/coupon'); drawerRender(); done('Coupon removed'); }
+  catch (e) { fail(e); }
+}
+$('#scrim').onclick = closeDrawer;
+
+/* ---------------------------------------------------------------------------
+ * 10. AUTH
+ * ------------------------------------------------------------------------- */
+function loginModal(signup) {
+  modal(`
+    <h2 id="mdtitle">${signup ? 'Create your account' : 'Welcome back'}</h2>
+    <p class="mut">${signup ? 'Save your wishlist, addresses and order history.' : 'Log in to check out and track orders.'}</p>
+    <form id="af" novalidate>
+      ${signup ? '<div class="field"><label for="an">Full name</label><input id="an" autocomplete="name" required></div>' : ''}
+      <div class="field"><label for="ae">Email</label><input id="ae" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="ap">Password</label><input id="ap" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}" required minlength="6">
+        ${signup ? '<div class="hint">At least 6 characters</div>' : ''}</div>
+      <div class="err" id="ar" role="alert"></div>
+      <button class="btn p full lg" type="submit">${signup ? 'Create account' : 'Log in'}</button>
+    </form>
+    <p class="center mut" style="margin:14px 0 0">
+      ${signup ? 'Already registered?' : 'New to ShopEase?'}
+      <button class="btn sm g" onclick="loginModal(${!signup})">${signup ? 'Log in instead' : 'Create an account'}</button>
+    </p>
+    <div class="panel" style="margin:16px 0 0;padding:12px">
+      <b class="tiny">Demo accounts</b>
+      <div class="tiny" style="line-height:1.7;margin-top:4px">
+        Customer: ${CONFIG.shopperEmail} / ${CONFIG.shopperPassword}<br>
+        Admin: ${CONFIG.adminEmail} / ${CONFIG.adminPassword}
+      </div>
+      <div class="row" style="gap:6px;margin-top:8px">
+        <button class="btn sm" onclick="fillDemo('user')">Fill customer</button>
+        <button class="btn sm" onclick="fillDemo('admin')">Fill admin</button>
+      </div>
+    </div>`, { narrow: true });
+
+  $('#af').onsubmit = async e => {
+    e.preventDefault();
+    $('#ar').textContent = '';
+    const btn = $('#af button[type=submit]');
+    btn.disabled = true;
+    try {
+      const r = await api('POST', signup ? '/api/auth/signup' : '/api/auth/login', {
+        name: signup ? $('#an').value : '', email: $('#ae').value, password: $('#ap').value
+      });
+      sessionStorage.setItem('se_token', r.token);
+      S.user = r.user;
+      S.co.addrId = null;
+      closeModal();
+      done(`Welcome, ${r.user.name.split(' ')[0]}!`);
+      await Promise.all([loadCart(), loadWish(), loadRecent()]);
+      go(S.view);
+    } catch (err) { $('#ar').textContent = err.message; }
+    finally { btn.disabled = false; }
+  };
+}
+
+function fillDemo(role) {
+  const c = role === 'admin'
+    ? { email: CONFIG.adminEmail, password: CONFIG.adminPassword }
+    : { email: CONFIG.shopperEmail, password: CONFIG.shopperPassword };
+  if ($('#ae')) { $('#ae').value = c.email; $('#ap').value = c.password; }
+}
+
+function logout() {
+  sessionStorage.removeItem('se_token');
+  S.user = null; S.wish = []; S.recent = []; S.co = { step: 1, d: {}, addrId: null };
+  closeDrawer();
+  done('Logged out');
+  go('shop');
+  loadCart();
+}
+
+/* ---------------------------------------------------------------------------
+ * 11. CHECKOUT - 3 step wizard
+ * ------------------------------------------------------------------------- */
+async function startCheckout() {
+  if (!S.cart.items?.length) { toast('Your cart is empty', 'e'); return; }
+  if (!S.user) { closeDrawer(); toast('Log in to check out', 'e'); return loginModal(false); }
+  S.co = { step: 1, d: {}, addrId: null };
+  closeDrawer();
+  try {
+    const addrs = await api('GET', '/api/addresses');
+    if (addrs.length) S.co.addrId = addrs[0].id;
+    S.co.d = { ...S.co.d, name: S.user.name, email: S.user.email };
+    checkout();
+  } catch (e) { fail(e); }
+}
+
+const STEPS = ['Shipping', 'Payment', 'Review'];
+
+function checkout() {
+  const { step, d } = S.co;
+  const stepper = `
+    <div class="steps">${[1, 2, 3].map(i => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="stepnav">${STEPS.map((s, i) => `<div class="${i + 1 <= step ? 'on' : ''}">${i + 1}. ${s}</div>`).join('')}</div>`;
+
+  modal(`<h2 id="mdtitle">Checkout</h2>${stepper}<div id="ckbody">${
+    step === 1 ? ckShipping() : step === 2 ? ckPayment() : ckReview()
+  }</div>`, { wide: step === 3 });
+}
+
+function ckShipping() {
+  const d = S.co.d;
+  return `
+    <div id="adrlist" class="stack" style="margin-bottom:14px"></div>
+    <div class="shead"><h3 id="shiphead">${S.co.addrId ? 'Add a new address' : 'Shipping address'}</h3>
+      ${S.co.addrId ? `<button class="btn sm g" onclick="S.co.addrId=null;checkout()">\u2190 Use a saved address</button>` : ''}</div>
+    <div class="form2">
+      <div class="field"><label for="cn">Full name</label><input id="cn" value="${esc(d.name || S.user.name)}"></div>
+      <div class="field"><label for="ce">Email</label><input id="ce" type="email" value="${esc(d.email || S.user.email)}"></div>
+      <div class="field"><label for="cp1">Phone (10 digits)</label><input id="cp1" inputmode="numeric" maxlength="10" value="${esc(d.phone || '')}"></div>
+      <div class="field"><label for="cz">PIN code</label><input id="cz" inputmode="numeric" maxlength="6" value="${esc(d.pin || '')}"></div>
+      <div class="field"><label for="cc">City</label><input id="cc" value="${esc(d.city || '')}"></div>
+      <div class="field"><label for="cl">Label</label><input id="cl" value="${esc(d.label || 'Home')}" placeholder="Home / Work"></div>
+    </div>
+    <div class="field"><label for="ca">Street address</label><textarea id="ca" placeholder="Flat, building, street, landmark">${esc(d.address || '')}</textarea></div>
+    <label class="fopt"><input type="checkbox" id="csave" checked><span>Save this address to my address book</span></label>
+    <div class="err" id="er" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="closeDrawer();toggleDrawer(true)">Back to cart</button><button class="btn p" onclick="ckNext()">Continue to payment</button></div>`;
+}
+
+function ckPayment() {
+  const d = S.co.d;
+  const methods = [
+    ['cod', '\u{1F4B0}', 'Cash on delivery', 'Pay the courier when it arrives'],
+    ['upi', '\u{1F4F3}', 'UPI', 'GPay, PhonePe, Paytm - any UPI app'],
+    ['card', '\u{1F4B3}', 'Card', 'Visa, Mastercard, RuPay']
+  ];
+  return `
+    <div class="stack" style="margin-bottom:14px">
+      ${methods.map(([v, e, t, s]) => `
+        <label class="pay ${d.pay === v ? 'on' : ''}">
+          <input type="radio" name="pm" class="sr" ${d.pay === v ? 'checked' : ''} onchange="S.co.d.pay='${v}';checkout()">
+          <span class="pe" aria-hidden="true">${e}</span>
+          <span class="grow"><b>${t}</b><span>${s}</span></span>
+        </label>`).join('')}
+    </div>
+    ${d.pay === 'upi' ? `<div class="field"><label for="cu">UPI ID</label><input id="cu" placeholder="yourname@bank" value="${esc(d.upi || '')}"><div class="hint">This is a demo - no money moves.</div></div>` : ''}
+    ${d.pay === 'card' ? `<div class="form2">
+        <div class="field"><label for="cn2">Card number</label><input id="cn2" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242" value="${esc(d.card || '')}"></div>
+        <div class="field"><label for="cnm">Name on card</label><input id="cnm" value="${esc(d.cardName || '')}"></div>
+      </div>` : ''}
+    ${d.pay === 'cod' ? '<div class="panel" style="padding:12px"><b class="tiny">\u26A0 Please keep exact cash ready</b><div class="tiny">Orders above ' + inr(CONFIG.freeShippingAbove) + ' ship free; below that a ' + inr(CONFIG.shippingFee) + ' fee applies.</div></div>' : ''}
+    <div class="err" id="er" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="S.co.step=1;checkout()">Back</button><button class="btn p" onclick="ckNext()">Review order</button></div>`;
+}
+
+function ckReview() {
+  const c = S.cart, d = S.co.d;
+  return `
+    <div class="row wrap between" style="gap:16px;align-items:flex-start">
+      <div class="grow" style="min-width:260px">
+        <div class="panel" style="padding:14px">
+          <b class="tiny">\u{1F4CD} DELIVER TO</b>
+          <p style="margin:6px 0 0">${esc(d.name)} &middot; ${esc(d.phone)}<br>${esc(d.address)}${d.city ? ', ' + esc(d.city) : ''} &middot; ${esc(d.pin)}<br><span class="tiny">${esc(d.email)}</span></p>
+        </div>
+        <div class="panel" style="padding:14px">
+          <b class="tiny">\u{1F4B3} PAYMENT</b>
+          <p style="margin:6px 0 0">${d.pay.toUpperCase()}${d.upi ? ' &middot; ' + esc(d.upi) : ''}${d.card ? ' &middot; ending ' + esc(String(d.card).replace(/\D/g, '').slice(-4)) : ''}</p>
+        </div>
+      </div>
+      <div class="grow" style="min-width:260px">
+        <div class="panel" style="padding:14px">
+          <b class="tiny">\u{1F6CD} ${c.items.length} ITEM${c.items.length === 1 ? '' : 'S'}</b>
+          ${c.items.map(i => `<div class="oline"><span class="em">${esc(i.p.emoji || '\u{1F4E6}')}</span><span class="grow">${esc(i.p.name)}<br><span class="tiny">Qty ${i.qty} \u00d7 ${inr(i.p.price)}</span></span><b>${inr(i.p.price * i.qty)}</b></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="tot row between" style="font-size:1.2rem;font-weight:800;margin-top:8px"><span>Total payable</span><span>${inr(c.total)}</span></div>
+    <p class="tiny">Includes ${inr(c.tax)} GST${c.disc ? ` and ${inr(c.disc)} discount (${esc(c.coupon)})` : ''}. Delivery by ${esc(c.eta || eta())}.</p>
+    <div class="err" id="er" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="S.co.step=2;checkout()">Back</button><button class="btn p lg" onclick="placeOrder()">Place order &middot; ${inr(c.total)}</button></div>`;
+}
+
+/** Fetch saved addresses into the shipping step. */
+async function fillAddressList() {
+  const box = $('#adrlist');
+  if (!box) return;
+  try {
+    const addrs = await api('GET', '/api/addresses');
+    if (!addrs.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<b class="tiny">\u{1F3E0} SAVED ADDRESSES</b>` + addrs.map(a => `
+      <button type="button" class="adr ${S.co.addrId == a.id ? 'on' : ''}" onclick="pickAddress(${a.id})">
+        <div class="row between"><b>${esc(a.label)} ${a.isDefault ? '<span class="tag info">Default</span>' : ''}</b><span class="tiny">${esc(a.name)}</span></div>
+        <div class="tiny">${esc(a.address)}${a.city ? ', ' + esc(a.city) : ''} &middot; ${esc(a.pin)} &middot; ${esc(a.phone)}</div>
+      </button>`).join('');
+  } catch (e) { /* non-fatal */ }
+}
+
+function pickAddress(id) {
+  api('GET', '/api/addresses').then(addrs => {
+    const a = addrs.find(x => x.id == id);
+    if (!a) return;
+    S.co.addrId = id;
+    S.co.d = { ...a, email: S.co.d.email || S.user.email, pay: S.co.d.pay || 'cod' };
+    checkout();
+  });
+}
+
+async function ckNext() {
+  const d = S.co.d;
+  if (S.co.step === 1) {
+    if (!S.co.addrId) {
+      d.name = $('#cn').value.trim();
+      d.email = $('#ce').value.trim();
+      d.phone = $('#cp1').value.trim();
+      d.pin = $('#cz').value.trim();
+      d.city = $('#cc').value.trim();
+      d.label = $('#cl').value.trim() || 'Home';
+      d.address = $('#ca').value.trim();
+      const msg = !re.name.test(d.name) ? 'Enter the recipient name'
+        : !re.email.test(d.email) ? 'Enter a valid email'
+        : !re.phone.test(d.phone) ? 'Phone must be 10 digits starting with 6-9'
+        : !re.pin.test(d.pin) ? 'PIN code must be 6 digits'
+        : d.address.length < 8 ? 'Enter the full street address' : '';
+      if (msg) { $('#er').textContent = msg; return; }
+      if ($('#csave')?.checked) {
+        try { await api('POST', '/api/addresses', d); } catch (e) { /* saving is best-effort */ }
+      }
+    }
+    S.co.step = 2;
+    checkout();
+    return;
+  }
+  if (S.co.step === 2) {
+    d.pay = d.pay || 'cod';
+    if (d.pay === 'upi') {
+      d.upi = $('#cu').value.trim();
+      if (!re.upi.test(d.upi)) { $('#er').textContent = 'Enter a valid UPI ID like name@bank'; return; }
+    }
+    if (d.pay === 'card') {
+      d.card = $('#cn2').value;
+      d.cardName = $('#cnm').value.trim();
+      if (!/^\d{16}$/.test(String(d.card).replace(/\D/g, ''))) { $('#er').textContent = 'Card number must be 16 digits'; return; }
+    }
+    S.co.step = 3;
+    checkout();
+    return;
+  }
+  placeOrder();
+}
+
+async function placeOrder() {
+  const btn = $('[onclick="placeOrder()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing order\u2026'; }
+  const d = S.co.d;
+  try {
+    const o = await api('POST', '/api/orders', {
+      shipping: { name: d.name, email: d.email, phone: d.phone, pin: d.pin, city: d.city, label: d.label, address: d.address },
+      payment: { method: d.pay, card: d.card, upi: d.upi }
+    });
+    await Promise.all([loadCart(), loadProducts()]);
+    modal(`
+      <div class="center" style="padding:10px 0 4px">
+        <div style="font-size:3.4rem">\u{1F389}</div>
+        <h2 id="mdtitle" style="margin:6px 0">Order placed!</h2>
+        <p class="mut">Order <b>${esc(o.id)}</b> confirmed. Delivery expected by <b>${dateFmt(Date.now() + 3 * 864e5)}</b>.</p>
+        <div class="panel" style="text-align:left;max-width:340px;margin:16px auto">
+          <div class="row between"><span class="mut">Items</span><span>${o.items.length}</span></div>
+          <div class="row between"><span class="mut">Payment</span><span>${o.payment.method.toUpperCase()}</span></div>
+          <div class="row between"><span class="strong">Total</span><span class="strong">${inr(o.total)}</span></div>
+        </div>
+        <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="printInvoice('${esc(o.id)}')">Download invoice</button>
+          <button class="btn p" onclick="closeModal();go('orders')">Track my order</button>
+        </div>
+      </div>`, { narrow: true });
+    S.co = { step: 1, d: {}, addrId: null };
+  } catch (e) {
+    fail(e);
+    if (btn) { btn.disabled = false; btn.textContent = `Place order \u00b7 ${inr(S.cart.total)}`; }
+    if ($('#er')) $('#er').textContent = e.message;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 12. ORDERS + INVOICE
+ * ------------------------------------------------------------------------- */
+/* STATUSES is declared once in the backend layer and reused here. */
+async function ordersView() {
+  if (!S.user) {
+    $('#main').innerHTML = `<div class="empty"><span class="ee">\u{1F4E6}</span><h3>Log in to see your orders</h3><p>Your order history, tracking and invoices live here.</p><button class="btn p lg" onclick="loginModal(false)">Log in</button></div>`;
+    return;
+  }
+  $('#main').innerHTML = `<div class="shead"><div><h1>My orders</h1><p>Track delivery, download invoices or cancel an order</p></div><button class="btn" onclick="go('shop')">Continue shopping</button></div><div id="ol"><div class="sk"></div></div>`;
+  try {
+    const a = await api('GET', '/api/orders');
+    $('#ol').innerHTML = a.length ? a.map(orderCard).join('') : `
+      <div class="empty"><span class="ee">\u{1F6D2}</span><h3>No orders yet</h3><p>When you place an order it will appear here with live tracking.</p><button class="btn p lg" onclick="go('shop')">Start shopping</button></div>`;
+  } catch (e) { fail(e); }
+}
+
+function orderCard(o) {
+  const cancelled = o.status === 'Cancelled';
+  const idx = STATUSES.indexOf(o.status);
+  const at = s => { const h = (o.history || []).find(x => x.status === s); return h ? relTime(h.at) : ''; };
+  return `
+    <article class="ord">
+      <div class="ordhead">
+        <div>
+          <div class="row wrap" style="gap:8px">
+            <b style="font-size:1.05rem">${esc(o.id)}</b>
+            <span class="tag ${cancelled ? 'bad' : o.status === 'Delivered' ? 'ok' : 'info'}">${esc(o.status)}</span>
+            ${o.payment.method === 'cod' ? '<span class="tag warn">Pay on delivery</span>' : '<span class="tag ok">Paid</span>'}
+          </div>
+          <div class="tiny" style="margin-top:4px">Placed ${dateTimeFmt(o.date)} &middot; ${o.items.length} item${o.items.length === 1 ? '' : 's'}</div>
+        </div>
+        <div class="row" style="gap:8px">
+          <span class="price">${inr(o.total)}</span>
+        </div>
+      </div>
+      ${cancelled
+        ? `<p class="tag bad" style="display:inline-flex">Cancelled ${at('Cancelled') ? '\u00b7 ' + esc(at('Cancelled')) : ''}</p>`
+        : `<div class="trk">${STATUSES.map((s, i) => `<div class="${i <= idx ? (i < idx ? 'done' : 'on') : ''}">${s}<small>${at(s) || '&nbsp;'}</small></div>`).join('')}</div>`}
+      <div style="margin-top:10px">${o.items.map(i => `
+        <div class="oline"><span class="em">${esc(i.emoji || '\u{1F4E6}')}</span><span class="grow">${esc(i.name)}<br><span class="tiny">${i.qty} \u00d7 ${inr(i.price)}</span></span><b>${inr(i.qty * i.price)}</b></div>`).join('')}</div>
+      <div class="row wrap between" style="margin-top:14px">
+        <div class="tiny">Deliver to ${esc(o.shipping.name)} &middot; ${esc(o.shipping.pin)}<br>Payment: ${esc(o.payment.method.toUpperCase())}${o.payment.last4 ? ' ending ' + esc(o.payment.last4) : ''}${o.coupon ? ' &middot; coupon ' + esc(o.coupon) : ''}</div>
+        <div class="row wrap" style="gap:8px">
+          ${['Placed', 'Packed'].includes(o.status) ? `<button class="btn d" onclick="cancelOrder('${esc(o.id)}')">Cancel</button>` : ''}
+          <button class="btn" onclick="invoice('${esc(o.id)}')">View invoice</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+async function cancelOrder(id) {
+  const yes = await confirmModal({
+    title: 'Cancel this order?',
+    body: 'Stock is returned to the catalogue and any paid amount is refunded to the original method.',
+    okLabel: 'Cancel order'
+  });
+  if (!yes) return;
+  try { await api('PUT', `/api/orders/${id}/cancel`); done('Order cancelled'); ordersView(); loadProducts(); }
+  catch (e) { fail(e); }
+}
+
+/* --- invoice ---------------------------------------------------------------- */
+function invoiceHtml(o) {
+  return `
+    <div class="inv">
+      <div class="top">
+        <div>
+          <div class="brand" style="font-size:1.3rem"><span class="logo">\u{1F6D2}</span><span>Shop<em>Ease</em></span></div>
+          <div class="tiny">Tax invoice</div>
+        </div>
+        <div class="tiny" style="text-align:right">
+          <b style="font-size:1.05rem;color:var(--ink)">${esc(o.id)}</b><br>
+          Ordered ${dateTimeFmt(o.date)}<br>
+          Status: ${esc(o.status)}
+        </div>
+      </div>
+      <div class="row wrap between" style="gap:24px;margin-bottom:18px">
+        <div>
+          <b class="tiny">SOLD BY</b>
+          <p style="margin:4px 0 0">ShopEase Retail Pvt Ltd<br>44 Market Road, Bengaluru 560001<br>GSTIN 29ABCDE1234F1Z5</p>
+        </div>
+        <div>
+          <b class="tiny">DELIVER TO</b>
+          <p style="margin:4px 0 0">${esc(o.shipping.name)}<br>${esc(o.shipping.address)}${o.shipping.city ? '<br>' + esc(o.shipping.city) : ''}<br>${esc(o.shipping.pin)} &middot; ${esc(o.shipping.phone)}<br>${esc(o.shipping.email)}</p>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>${o.items.map(i => `<tr><td>${esc(i.emoji || '')} ${esc(i.name)}</td><td>${i.qty}</td><td>${inr(i.price)}</td><td style="text-align:right">${inr(i.qty * i.price)}</td></tr>`).join('')}</tbody>
+      </table>
+      <div class="tot">
+        <div class="row between"><span>Subtotal</span><span>${inr(o.sub)}</span></div>
+        ${o.disc ? `<div class="row between"><span>Discount${o.coupon ? ' (' + esc(o.coupon) + ')' : ''}</span><span>\u2212${inr(o.disc)}</span></div>` : ''}
+        <div class="row between"><span>GST 18%</span><span>${inr(o.tax)}</span></div>
+        <div class="row between"><span>Shipping</span><span>${o.ship ? inr(o.ship) : 'Free'}</span></div>
+        <div class="row between" style="font-size:1.1rem;font-weight:800;border-top:2px solid var(--ink);margin-top:8px;padding-top:8px"><span>Total</span><span>${inr(o.total)}</span></div>
+        <div class="row between"><span>Payment</span><span>${esc(o.payment.method.toUpperCase())}${o.payment.last4 ? ' ending ' + esc(o.payment.last4) : ''}${o.payment.upi ? ' \u00b7 ' + esc(o.payment.upi) : ''}</span></div>
+      </div>
+      <p class="tiny" style="margin-top:22px">This is a demo invoice generated by the ShopEase sample project. No real payment was processed and no goods will be shipped.</p>
+    </div>`;
+}
+
+async function invoice(id) {
+  try {
+    const o = await api('GET', '/api/orders/' + id);
+    modal(`
+      ${invoiceHtml(o)}
+      <div class="mfoot no-print">
+        <button class="btn" onclick="closeModal()">Close</button>
+        <button class="btn p" onclick="printInvoice('${esc(id)}')">Print / save as PDF</button>
+      </div>`, { wide: true });
+  } catch (e) { fail(e); }
+}
+
+async function printInvoice(id) {
+  try {
+    const o = await api('GET', '/api/orders/' + id);
+    $('#printArea').innerHTML = invoiceHtml(o);
+    window.print();
+  } catch (e) { fail(e); }
+}
+
+/* ---------------------------------------------------------------------------
+ * 13. ACCOUNT: wishlist, addresses, profile
+ * ------------------------------------------------------------------------- */
+async function wishlistView() {
+  $('#main').innerHTML = `<div class="shead"><div><h1>Saved items</h1><p>Your shortlist, ready when you are</p></div><button class="btn" onclick="go('shop')">Keep shopping</button></div><div id="wl"><div class="sk"></div></div>`;
+  await loadWish();
+  renderWishlist();
+}
+
+function renderWishlist() {
+  const box = $('#wl');
+  if (!box) return;
+  box.innerHTML = S.wish.length
+    ? `<div class="row wrap between" style="margin-bottom:14px"><span class="mut">${S.wish.length} saved item${S.wish.length === 1 ? '' : 's'}</span>
+        <button class="btn sm d" onclick="clearWish()">Clear wishlist</button></div>
+       <div class="grid">${S.wish.map(p => cardHtml(p)).join('')}</div>`
+    : `<div class="empty"><span class="ee">\u2764</span><h3>Your wishlist is empty</h3><p>Tap the heart on any product to save it here.</p><button class="btn p lg" onclick="go('shop')">Find something you like</button></div>`;
+}
+
+async function clearWish() {
+  const yes = await confirmModal({ title: 'Clear your wishlist?', body: 'All saved items will be removed.', okLabel: 'Clear all' });
+  if (!yes) return;
+  for (const p of [...S.wish]) { try { await api('DELETE', '/api/wishlist/' + p.id); } catch (e) {} }
+  S.wish = [];
+  navRender();
+  renderWishlist();
+  done('Wishlist cleared');
+}
+
+async function wishMoveToCart(id) {
+  try {
+    const r = await api('POST', `/api/wishlist/${id}/move-to-cart`);
+    S.cart = r.cart;
+    S.wish = (await api('GET', '/api/wishlist')).items;
+    navRender();
+    renderWishlist();
+    done('Moved to cart');
+    toggleDrawer(true);
+  } catch (e) { fail(e); }
+}
+
+/* --- address book ----------------------------------------------------------- */
+function adrForm(a = {}) {
+  modal(`
+    <h2 id="mdtitle">${a.id ? 'Edit address' : 'Add a new address'}</h2>
+    <div class="form2">
+      <div class="field"><label for="al">Label</label><input id="al" maxlength="24" value="${esc(a.label || '')}" placeholder="Home / Work / Office"></div>
+      <div class="field"><label for="an2">Recipient name</label><input id="an2" value="${esc(a.name || '')}"></div>
+      <div class="field"><label for="ap2">Phone</label><input id="ap2" inputmode="numeric" maxlength="10" value="${esc(a.phone || '')}"></div>
+      <div class="field"><label for="az2">PIN code</label><input id="az2" inputmode="numeric" maxlength="6" value="${esc(a.pin || '')}"></div>
+      <div class="field"><label for="ac2">City</label><input id="ac2" value="${esc(a.city || '')}"></div>
+      <div class="field"><label for="ad2">Default</label><label class="fopt"><input type="checkbox" id="adef" ${a.isDefault ? 'checked' : ''}><span>Use as default address</span></label></div>
+    </div>
+    <div class="field"><label for="aa2">Street address</label><textarea id="aa2">${esc(a.address || '')}</textarea></div>
+    <div class="err" id="aerr" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn p" onclick="saveAdr(${a.id || 0})">Save address</button></div>`);
+}
+
+async function saveAdr(id) {
+  const body = {
+    label: $('#al').value, name: $('#an2').value, phone: $('#ap2').value,
+    pin: $('#az2').value, city: $('#ac2').value, address: $('#aa2').value,
+    isDefault: $('#adef').checked
+  };
+  try {
+    id ? await api('PUT', '/api/addresses/' + id, body) : await api('POST', '/api/addresses', body);
+    closeModal();
+    done('Address saved');
+    addressesView();
+  } catch (e) { $('#aerr').textContent = e.message; }
+}
+
+async function addressesView() {
+  if (!S.user) {
+    $('#main').innerHTML = `<div class="empty"><span class="ee">\u{1F3E0}</span><h3>Log in to manage addresses</h3><button class="btn p lg" onclick="loginModal(false)">Log in</button></div>`;
+    return;
+  }
+  $('#main').innerHTML = `<div class="shead"><div><h1>Address book</h1><p>Saved addresses make checkout one tap faster</p></div><button class="btn p" onclick="adrForm()">Add address</button></div><div id="ab"><div class="sk"></div></div>`;
+  try {
+    const a = await api('GET', '/api/addresses');
+    $('#ab').innerHTML = a.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">${a.map(x => `
+      <div class="panel" style="margin:0">
+        <div class="row between" style="margin-bottom:8px">
+          <b>${esc(x.label)}</b>${x.isDefault ? '<span class="tag info">Default</span>' : ''}
+        </div>
+        <p class="mut" style="margin:0 0 10px">${esc(x.name)}<br>${esc(x.address)}${x.city ? '<br>' + esc(x.city) : ''}<br>${esc(x.pin)} &middot; ${esc(x.phone)}</p>
+        <div class="row" style="gap:6px">
+          <button class="btn sm" onclick="adrForm(${JSON.stringify(x).replace(/"/g, '&quot;')})">Edit</button>
+          ${x.isDefault ? '' : `<button class="btn sm" onclick="makeDefaultAdr(${x.id})">Make default</button>`}
+          <button class="btn sm d" onclick="delAdr(${x.id})">Delete</button>
+        </div>
+      </div>`).join('')}</div>` : `<div class="empty"><span class="ee">\u{1F3E0}</span><h3>No saved addresses</h3><p>Add one and it will appear here for faster checkout.</p><button class="btn p lg" onclick="adrForm()">Add your first address</button></div>`;
+  } catch (e) { fail(e); }
+}
+
+async function makeDefaultAdr(id) {
+  try { await api('PUT', '/api/addresses/' + id, { isDefault: true }); done('Default address updated'); addressesView(); }
+  catch (e) { fail(e); }
+}
+async function delAdr(id) {
+  const yes = await confirmModal({ title: 'Delete this address?', body: 'You can always add it again later.', okLabel: 'Delete' });
+  if (!yes) return;
+  try { await api('DELETE', '/api/addresses/' + id); done('Address deleted'); addressesView(); }
+  catch (e) { fail(e); }
+}
+
+/* --- account ---------------------------------------------------------------- */
+async function accountView() {
+  if (!S.user) {
+    $('#main').innerHTML = `<div class="empty"><span class="ee">\u{1F464}</span><h3>Log in to view your profile</h3><button class="btn p lg" onclick="loginModal(false)">Log in</button></div>`;
+    return;
+  }
+  const orders = await api('GET', '/api/orders');
+  const spent = orders.filter(o => o.status !== 'Cancelled').reduce((s, o) => s + o.total, 0);
+  const theme = document.documentElement.dataset.theme;
+  $('#main').innerHTML = `
+    <div class="shead"><div><h1>Your account</h1><p>Profile, preferences and demo data controls</p></div></div>
+    <div class="panel">
+      <div class="row wrap" style="gap:16px">
+        <span class="avatar" style="width:64px;height:64px;font-size:1.5rem">${avatarOf(S.user.name)}</span>
+        <div class="grow"><h3 style="margin:0">${esc(S.user.name)}</h3><p class="mut" style="margin:2px 0 0">${esc(S.user.email)} ${S.user.role === 'admin' ? '<span class="tag info">Admin</span>' : ''}</p></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="ico">\u{1F6D2}</span><div class="lbl">Orders</div><div class="val">${orders.length}</div><div class="sub">${orders.filter(o => ['Placed', 'Packed'].includes(o.status)).length} in progress</div></div>
+      <div class="stat"><span class="ico">\u{1F4B0}</span><div class="lbl">Lifetime value</div><div class="val">${inr(spent)}</div><div class="sub">excluding cancelled</div></div>
+      <div class="stat"><span class="ico">\u2764</span><div class="lbl">Wishlist</div><div class="val">${S.wish.length}</div><div class="sub">saved items</div></div>
+      <div class="stat"><span class="ico">\u{1F3E0}</span><div class="lbl">Addresses</div><div class="val" id="adrCount">-</div><div class="sub">in your address book</div></div>
+    </div>
+    <div class="shop">
+      <div>
+        <div class="panel">
+          <h3>Appearance</h3>
+          <p class="mut">Choose how ShopEase looks. The choice is saved on this device.</p>
+          <div class="row wrap" style="gap:8px">
+            <button class="btn ${theme === 'light' ? 'p' : ''}" onclick="setTheme('light');accountView()">\u2600 Light</button>
+            <button class="btn ${theme === 'dark' ? 'p' : ''}" onclick="setTheme('dark');accountView()">\u{1F319} Dark</button>
+            <button class="btn" onclick="setTheme('${matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'}');accountView()">Match system</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Demo data</h3>
+          <p class="mut">Everything lives in this browser's localStorage. Reset to restore the original catalogue, coupons and reviews.</p>
+          <div class="row wrap" style="gap:8px">
+            <button class="btn d" onclick="resetDemo()">Reset all demo data</button>
+            <button class="btn" onclick="go('admin')">Open admin panel</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Keyboard shortcuts</h3>
+          ${[['/', 'Focus search'], ['c', 'Open / close the cart'], ['w', 'Go to wishlist'], ['g then s', 'Go to shop'], ['g then o', 'Go to orders'], ['Esc', 'Close dialog or drawer'], ['?', 'Show this list']].map(([k, d]) => `
+            <div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line)"><span class="mut">${d}</span><kbd>${k}</kbd></div>`).join('')}
+        </div>
+      </div>
+      <aside class="filters open" aria-label="Checkout shortcuts">
+        <div class="fgroup"><h3>Shortcuts</h3>
+          <div class="stack" style="gap:8px">
+            <button class="btn full" onclick="go('orders')">\u{1F6CD} My orders</button>
+            <button class="btn full" onclick="go('wishlist')">\u2764 Wishlist (${S.wish.length})</button>
+            <button class="btn full" onclick="go('addresses')">\u{1F3E0} Address book</button>
+            <button class="btn full" onclick="logout()">Log out</button>
+          </div>
+        </div>
+        <div class="fgroup"><h3>Store rules</h3>
+          <ul class="tiny" style="line-height:1.9">
+            <li>Free delivery above ${inr(CONFIG.freeShippingAbove)}</li>
+            <li>Flat ${inr(CONFIG.shippingFee)} below that</li>
+            <li>GST ${(CONFIG.taxRate * 100).toFixed(0)}% included in the price</li>
+            <li>Max ${CONFIG.maxQtyPerItem} units per item per order</li>
+            <li>Demo admin: ${esc(CONFIG.adminEmail)}</li>
+          </ul>
+        </div>
+      </aside>
+    </div>`;
+  try { $('#adrCount').textContent = (await api('GET', '/api/addresses')).length; } catch (e) {}
+}
+
+async function resetDemo() {
+  const yes = await confirmModal({
+    title: 'Reset all demo data?',
+    body: 'Products, users, orders, reviews, coupons, addresses and carts will be restored to their original seeded state.',
+    okLabel: 'Reset everything'
+  });
+  if (!yes) return;
+  db.clearDemo();
+  sessionStorage.removeItem('se_token');
+  localStorage.clear();
+  location.reload();
+}
+
+function helpModal() {
+  modal(`
+    <h2 id="mdtitle">Keyboard shortcuts</h2>
+    <table>
+      <tbody>
+        <tr><td><kbd>/</kbd></td><td>Focus the search box</td></tr>
+        <tr><td><kbd>c</kbd></td><td>Open / close the cart drawer</td></tr>
+        <tr><td><kbd>w</kbd></td><td>Open the wishlist</td></tr>
+        <tr><td><kbd>g</kbd> then <kbd>s</kbd></td><td>Back to the shop</td></tr>
+        <tr><td><kbd>g</kbd> then <kbd>o</kbd></td><td>Open my orders</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close any dialog or the drawer</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Show this panel</td></tr>
+        <tr><td><kbd>\u2191</kbd> <kbd>\u2193</kbd> <kbd>Enter</kbd></td><td>Move through search suggestions</td></tr>
+        <tr><td><kbd>Tab</kbd></td><td>Move focus (trapped inside dialogs)</td></tr>
+      </tbody>
+    </table>
+    <div class="mfoot"><button class="btn p" onclick="closeModal()">Got it</button></div>`, { narrow: true });
+}
+
+/* ---------------------------------------------------------------------------
+ * 14. ADMIN
+ * ------------------------------------------------------------------------- */
+const ADMIN_TABS = [['dashboard', '\u{1F4CA} Dashboard'], ['products', '\u{1F6CD} Products'], ['orders', '\u{1F4E6} Orders'], ['coupons', '\u{1F3AF} Coupons'], ['reviews', '\u{2B50} Reviews']];
+
+async function adminView() {
+  if (!S.user || S.user.role !== 'admin') {
+    $('#main').innerHTML = `<div class="empty"><span class="ee">\u{1F512}</span><h3>Admin access only</h3><p>Log in as ${esc(CONFIG.adminEmail)} to open the admin panel.</p><button class="btn p lg" onclick="loginModal(false)">Log in</button></div>`;
+    return;
+  }
+  $('#main').innerHTML = `
+    <div class="shead"><div><h1>Admin panel</h1><p>Catalogue, fulfilment, promotions and moderation</p></div>
+      <span class="tag ok">Signed in as ${esc(S.user.email)}</span></div>
+    <div class="bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      ${ADMIN_TABS.map(([t, l]) => `<button class="chip ${S.tab === t ? 'on' : ''}" onclick="S.tab='${t}';adminView()">${l}</button>`).join('')}
+    </div>
+    <div id="ad"><div class="sk"></div></div>`;
+
+  try {
+    if (S.tab === 'dashboard') return adminDashboard();
+    if (S.tab === 'products') return adminProducts();
+    if (S.tab === 'orders') return adminOrders();
+    if (S.tab === 'coupons') return adminCoupons();
+    if (S.tab === 'reviews') return adminReviews();
+  } catch (e) { fail(e); }
+}
+
+async function adminDashboard() {
+  const d = await api('GET', '/api/admin/dashboard');
+  const maxRev = Math.max(1, ...d.days.map(x => x.revenue));
+  const statuses = ['Placed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'];
+  const colors = { Placed: 'var(--ac)', Packed: '#8b5cf6', Shipped: '#06b6d4', Delivered: 'var(--ok)', Cancelled: 'var(--bad)' };
+  const totBy = statuses.reduce((s, k) => s + (d.by[k] || 0), 0) || 1;
+
+  $('#ad').innerHTML = `
+    <div class="stats">
+      <div class="stat"><span class="ico">\u{1F4B0}</span><div class="lbl">Revenue</div><div class="val">${inr(d.revenue)}</div><div class="sub">${d.paidOrders} paid orders</div></div>
+      <div class="stat"><span class="ico">\u{1F6E6}</span><div class="lbl">Avg order value</div><div class="val">${inr(d.aov)}</div><div class="sub">${d.orders} orders all time</div></div>
+      <div class="stat"><span class="ico">\u{1F465}</span><div class="lbl">Customers</div><div class="val">${d.users}</div><div class="sub">${d.products} products listed</div></div>
+      <div class="stat"><span class="ico">\u{1F6E0}</span><div class="lbl">Stock value</div><div class="val">${inr(d.catalogueValue)}</div><div class="sub">at list price</div></div>
+    </div>
+
+    <div class="shop">
+      <div>
+        <div class="panel">
+          <div class="shead"><div><h3>Revenue, last 7 days</h3><p>Gross of cancelled orders</p></div><span class="strong">${inr(d.days.reduce((s, x) => s + x.revenue, 0))}</span></div>
+          <div class="chart">
+            ${d.days.map(x => `<div class="col" title="${dateFmt(x.date)}: ${inr(x.revenue)} across ${x.orders} order${x.orders === 1 ? '' : 's'}">
+              <span class="vl">${x.revenue ? inr(x.revenue) : ''}</span>
+              <div class="bar" style="height:${(x.revenue / maxRev) * 100}%"></div>
+              <span class="lb">${esc(x.label)}</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Order status breakdown</h3>
+          <div class="donut">
+            <svg width="132" height="132" viewBox="0 0 42 42" role="img" aria-label="Order status distribution">
+              ${statuses.map((k, i) => {
+                const frac = (d.by[k] || 0) / totBy;
+                const off = statuses.slice(0, i).reduce((s, x) => s + (d.by[x] || 0) / totBy, 0);
+                return `<circle r="15.9" cx="21" cy="21" fill="none" stroke="${colors[k]}" stroke-width="5"
+                  stroke-dasharray="${(frac * 100).toFixed(2)} ${(100 - frac * 100).toFixed(2)}"
+                  stroke-dashoffset="${(off * 100).toFixed(2)}"></circle>`;
+              }).join('')}
+              <text x="21" y="20.5" text-anchor="middle" font-size="6" font-weight="700" fill="currentColor">${d.orders}</text>
+              <text x="21" y="27" text-anchor="middle" font-size="3" fill="currentColor" opacity=".6">orders</text>
+            </svg>
+            <div class="dlegend">
+              ${statuses.map(k => `<span><i style="background:${colors[k]}"></i>${k} <b>${d.by[k] || 0}</b></span>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="filters open" aria-label="Alerts">
+        <div class="fgroup">
+          <h3>Low stock alerts</h3>
+          ${d.lowStock.length ? d.lowStock.map(p => `
+            <div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line)">
+              <span class="tiny">${esc(p.emoji)} ${esc(p.name)}</span>
+              <span class="tag warn">${p.stock} left</span>
+            </div>`).join('') : '<p class="tiny">All products comfortably in stock.</p>'}
+        </div>
+        <div class="fgroup">
+          <h3>Out of stock</h3>
+          ${d.outOfStock.length ? d.outOfStock.map(p => `<div class="row between" style="padding:5px 0"><span class="tiny">${esc(p.emoji)} ${esc(p.name)}</span><span class="tag bad">0</span></div>`).join('') : '<p class="tiny">Nothing out of stock.</p>'}
+        </div>
+        <div class="fgroup">
+          <h3>Best sellers</h3>
+          ${d.topProducts.length ? d.topProducts.map((p, i) => `
+            <div class="row" style="padding:5px 0;gap:8px">
+              <span class="avatar" style="width:24px;height:24px;font-size:.7rem">${i + 1}</span>
+              <span class="tiny grow">${esc(p.emoji)} ${esc(p.name)}</span>
+              <b class="tiny">${p.units}</b>
+            </div>`).join('') : '<p class="tiny">No sales yet.</p>'}
+        </div>
+        <div class="fgroup">
+          <h3>Recent orders</h3>
+          ${d.recentOrders.map(o => `<div class="tiny" style="padding:4px 0;border-bottom:1px solid var(--line)"><b>${esc(o.id)}</b> &middot; ${inr(o.total)}<br><span class="tag ${o.status === 'Cancelled' ? 'bad' : 'info'}">${esc(o.status)}</span></div>`).join('') || '<p class="tiny">No orders yet.</p>'}
+        </div>
+      </aside>
+    </div>`;
+}
+
+async function adminProducts() {
+  const r = await api('GET', '/api/products?sort=name&limit=100');
+  const q = (S.adminQ || '').toLowerCase();
+  const rows = r.items.filter(p => !q || (p.name + p.brand + p.category).toLowerCase().includes(q));
+  $('#ad').innerHTML = `
+    <div class="tools">
+      <button class="btn p" onclick="prodForm()">Add product</button>
+      <button class="btn" onclick="exportCsv()">\u2193 Export CSV</button>
+      <button class="btn" onclick="importCsv()">\u2191 Import CSV</button>
+      <div class="grow"></div>
+      <label for="aq" class="sr">Filter catalogue</label>
+      <input id="aq" placeholder="Filter by name, brand or category" value="${esc(S.adminQ || '')}" style="max-width:260px">
+    </div>
+    <p class="tiny">${rows.length} of ${r.total} products &middot; ${r.brands.length} brands &middot; ${r.categories.length - 1} categories</p>
+    <div class="sc">
+      <table>
+        <thead><tr><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th></th></tr></thead>
+        <tbody>${rows.map(p => `
+          <tr>
+            <td><div class="row" style="gap:8px"><span style="font-size:1.3rem">${esc(p.emoji || '\u{1F4E6}')}</span><span><b>${esc(p.name)}</b><br><span class="tiny">${esc((p.desc || '').slice(0, 46))}${p.desc.length > 46 ? '\u2026' : ''}</span></span></div></td>
+            <td class="tiny">${esc(p.brand || '\u2014')}</td>
+            <td><span class="tag">${esc(p.category)}</span></td>
+            <td class="strong">${inr(p.price)}</td>
+            <td>${p.stock === 0 ? '<span class="tag bad">Out</span>' : p.stock <= CONFIG.lowStockAt ? `<span class="tag warn">${p.stock}</span>` : `<span class="tag ok">${p.stock}</span>`}</td>
+            <td class="tiny">${p.rating.toFixed(1)} \u2605 (${p.reviewCount || 0})</td>
+            <td><div class="row" style="gap:4px;justify-content:flex-end">
+              <button class="btn sm" onclick="prodForm(${p.id})">Edit</button>
+              <button class="btn sm d" onclick="delProd(${p.id})">Delete</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  $('#aq').oninput = debounce(e => { S.adminQ = e.target.value; adminProducts(); }, 250);
+}
+
+async function prodForm(id) {
+  const p = id
+    ? await api('GET', '/api/products/' + id)
+    : { name: '', emoji: '\u{1F4E6}', category: '', brand: '', price: '', stock: '', desc: '', image: '' };
+  modal(`
+    <h2 id="mdtitle">${id ? 'Edit product' : 'Add a product'}</h2>
+    <div class="form2">
+      <div class="field" style="grid-column:1/-1"><label for="fn">Name</label><input id="fn" value="${esc(p.name)}" maxlength="80"></div>
+      <div class="field"><label for="fe">Emoji (used as the thumbnail)</label><input id="fe" value="${esc(p.emoji || '')}" maxlength="4"></div>
+      <div class="field"><label for="fi">Image URL (optional)</label><input id="fi" value="${esc(p.image || '')}" placeholder="https://\u2026"></div>
+      <div class="field"><label for="fc">Category</label><input id="fc" value="${esc(p.category)}" list="catlist" maxlength="40"></div>
+      <div class="field"><label for="fb">Brand</label><input id="fb" value="${esc(p.brand || '')}" list="brandlist" maxlength="40"></div>
+      <div class="field"><label for="fp">Price (${CONFIG.currency})</label><input id="fp" type="number" min="1" step="1" value="${p.price}"></div>
+      <div class="field"><label for="fs">Stock on hand</label><input id="fs" type="number" min="0" step="1" value="${p.stock}"></div>
+    </div>
+    <div class="field"><label for="fd">Description</label><textarea id="fd" maxlength="400">${esc(p.desc || '')}</textarea></div>
+    <datalist id="catlist"></datalist><datalist id="brandlist"></datalist>
+    <div class="err" id="perr" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn p" onclick="saveProd(${id || 0})">${id ? 'Save changes' : 'Create product'}</button></div>`, { wide: true });
+  try {
+    const all = await api('GET', '/api/products?limit=200');
+    $('#catlist').innerHTML = all.categories.filter(c => c !== 'All').map(c => `<option value="${esc(c)}">`).join('');
+    $('#brandlist').innerHTML = all.brands.map(c => `<option value="${esc(c)}">`).join('');
+  } catch (e) {}
+}
+
+async function saveProd(id) {
+  const body = {
+    name: $('#fn').value, emoji: $('#fe').value, category: $('#fc').value, brand: $('#fb').value,
+    price: $('#fp').value, stock: $('#fs').value, desc: $('#fd').value, image: $('#fi').value
+  };
+  try {
+    id ? await api('PUT', '/api/products/' + id, body) : await api('POST', '/api/products', body);
+    closeModal();
+    done(id ? 'Product updated' : 'Product created');
+    adminProducts();
+    loadProducts();
+  } catch (e) { $('#perr').textContent = e.message; }
+}
+
+async function delProd(id) {
+  const yes = await confirmModal({ title: 'Delete this product?', body: 'It will be removed from the catalogue and from every cart. Existing orders keep their record.', okLabel: 'Delete product' });
+  if (!yes) return;
+  try { await api('DELETE', '/api/products/' + id); done('Product deleted'); adminProducts(); loadCart(); }
+  catch (e) { fail(e); }
+}
+
+async function exportCsv() {
+  try {
+    const r = await api('GET', '/api/products/export.csv');
+    const url = URL.createObjectURL(new Blob([r.csv], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = r.filename; a.click();
+    URL.revokeObjectURL(url);
+    done('Catalogue exported');
+  } catch (e) { fail(e); }
+}
+
+function importCsv() {
+  modal(`
+    <h2 id="mdtitle">Import products from CSV</h2>
+    <p class="mut">Header row is required. Minimum columns: <b>name, price</b>. Optional: emoji, category, brand, stock, desc, image, rating.
+    Rows matching an existing product name update it instead of creating a duplicate.</p>
+    <div class="field"><label for="csv">Paste CSV</label><textarea id="csv" rows="7" placeholder="name,emoji,category,brand,price,stock,desc"></textarea></div>
+    <div class="field"><label for="csvf">or choose a file</label><input type="file" id="csvf" accept=".csv,text/csv"></div>
+    <div class="err" id="ierr" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn p" onclick="doImport()">Import</button></div>`);
+  $('#csvf').onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => { $('#csv').value = fr.result; };
+    fr.readAsText(f);
+  };
+}
+
+async function doImport() {
+  const csv = $('#csv').value.trim();
+  if (!csv) { $('#ierr').textContent = 'Paste CSV content or choose a file first'; return; }
+  try {
+    const r = await api('POST', '/api/products/import', { csv });
+    closeModal();
+    done(`Imported: ${r.created} created, ${r.updated} updated${r.errors.length ? `, ${r.errors.length} skipped` : ''}`);
+    if (r.errors.length) modal(`
+      <h2 id="mdtitle">Import finished with warnings</h2>
+      <p class="mut">${r.created} created, ${r.updated} updated.</p>
+      <div class="sc"><table><thead><tr><th>Row</th><th>Problem</th></tr></thead><tbody>
+        ${r.errors.map(e => `<tr><td>${esc(e.split(':')[0])}</td><td>${esc(e.split(':').slice(1).join(':').trim())}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="mfoot"><button class="btn p" onclick="closeModal()">Done</button></div>`);
+    adminProducts();
+  } catch (e) { $('#ierr').textContent = e.message; }
+}
+
+async function adminOrders() {
+  const a = await api('GET', '/api/admin/orders');
+  const q = (S.adminOQ || '').toLowerCase();
+  const rows = a.filter(o => !q || (o.id + ' ' + o.user + ' ' + o.status).toLowerCase().includes(q));
+  $('#ad').innerHTML = `
+    <div class="tools">
+      <div class="grow"></div>
+      <label for="oq" class="sr">Filter orders</label>
+      <input id="oq" placeholder="Filter by order ID, customer or status" value="${esc(S.adminOQ || '')}" style="max-width:280px">
+    </div>
+    <p class="tiny">${rows.length} of ${a.length} orders &middot; revenue excluding cancellations: ${inr(a.filter(o => o.status !== 'Cancelled').reduce((s, o) => s + o.total, 0))}</p>
+    <div class="sc">
+      <table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows.map(o => `
+          <tr>
+            <td><b>${esc(o.id)}</b></td>
+            <td>${esc(o.user)}<br><span class="tiny">${esc(o.shipping?.pin || '')}</span></td>
+            <td class="tiny">${dateFmt(o.date)}</td>
+            <td class="tiny">${o.items.length}</td>
+            <td class="strong">${inr(o.total)}</td>
+            <td class="tiny">${esc(o.payment?.method?.toUpperCase() || '\u2014')}</td>
+            <td><label class="sr" for="st${esc(o.id)}">Status for ${esc(o.id)}</label>
+              <select id="st${esc(o.id)}" onchange="setStatus('${esc(o.id)}',this.value)">
+                ${[...STATUSES, 'Cancelled'].map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+              </select></td>
+            <td><button class="btn sm" onclick="invoice('${esc(o.id)}')">Invoice</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  $('#oq').oninput = debounce(e => { S.adminOQ = e.target.value; adminOrders(); }, 250);
+}
+
+async function setStatus(id, status) {
+  try { await api('PUT', `/api/admin/orders/${id}/status`, { status }); done(`${id} marked ${status}`); }
+  catch (e) { fail(e); adminOrders(); }
+}
+
+async function adminCoupons() {
+  const list = await api('GET', '/api/admin/coupons');
+  const today = new Date().toISOString().slice(0, 10);
+  $('#ad').innerHTML = `
+    <div class="tools">
+      <button class="btn p" onclick="couponForm()">New coupon</button>
+      <div class="grow"></div>
+      <span class="tiny">${list.filter(c => c.active !== false && c.expires >= today).length} live</span>
+    </div>
+    <div class="sc">
+      <table>
+        <thead><tr><th>Code</th><th>Discount</th><th>Minimum order</th><th>Expires</th><th>Used</th><th>Status</th><th></th></tr></thead>
+        <tbody>${list.map(c => {
+          const expired = c.expires < today;
+          return `<tr>
+            <td><b>${esc(c.code)}</b><br><span class="tiny">${esc(c.note || '')}</span></td>
+            <td class="strong">${c.type === 'percent' ? c.value + '%' : inr(c.value)}</td>
+            <td>${inr(c.min)}</td>
+            <td class="tiny">${dateFmt(c.expires)}</td>
+            <td class="tiny">${c.used || 0}</td>
+            <td>${expired ? '<span class="tag bad">Expired</span>' : c.active === false ? '<span class="tag">Paused</span>' : '<span class="tag ok">Live</span>'}</td>
+            <td><div class="row" style="gap:4px;justify-content:flex-end">
+              <button class="btn sm" onclick="couponForm(${JSON.stringify(c).replace(/"/g, '&quot;')})">Edit</button>
+              <button class="btn sm" onclick="toggleCoupon(${c.id},${c.active === false})">${c.active === false ? 'Enable' : 'Pause'}</button>
+              <button class="btn sm d" onclick="delCoupon(${c.id})">Delete</button>
+            </div></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function couponForm(c = {}) {
+  modal(`
+    <h2 id="mdtitle">${c.id ? 'Edit coupon' : 'New coupon'}</h2>
+    <div class="form2">
+      <div class="field"><label for="cc">Code</label><input id="cc" value="${esc(c.code || '')}" maxlength="12" style="text-transform:uppercase" ${c.id ? 'disabled' : ''}></div>
+      <div class="field"><label for="ct">Type</label><select id="ct">
+        <option value="percent" ${c.type === 'percent' ? 'selected' : ''}>Percentage off</option>
+        <option value="flat" ${c.type === 'flat' ? 'selected' : ''}>Flat amount off</option></select></div>
+      <div class="field"><label for="cv">Value</label><input id="cv" type="number" min="1" value="${c.value || ''}"></div>
+      <div class="field"><label for="cmin">Minimum order value</label><input id="cmin" type="number" min="0" value="${c.min || 0}"></div>
+      <div class="field"><label for="cex">Expires on</label><input id="cex" type="date" value="${esc(c.expires || '')}"></div>
+      <div class="field"><label for="cact">Status</label><label class="fopt"><input type="checkbox" id="cact" ${c.active === false ? '' : 'checked'}><span>Active</span></label></div>
+    </div>
+    <div class="field"><label for="cnote">Internal note</label><input id="cnote" maxlength="60" value="${esc(c.note || '')}" placeholder="Shown to shoppers as a hint"></div>
+    <div class="err" id="cerr" role="alert"></div>
+    <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn p" onclick="saveCoupon(${c.id || 0})">Save coupon</button></div>`);
+}
+
+async function saveCoupon(id) {
+  const body = {
+    code: $('#cc').value, type: $('#ct').value, value: $('#cv').value,
+    min: $('#cmin').value, expires: $('#cex').value, note: $('#cnote').value, active: $('#cact').checked
+  };
+  try {
+    id ? await api('PUT', '/api/admin/coupons/' + id, body) : await api('POST', '/api/admin/coupons', body);
+    closeModal();
+    done(id ? 'Coupon updated' : 'Coupon created');
+    adminCoupons();
+  } catch (e) { $('#cerr').textContent = e.message; }
+}
+
+async function toggleCoupon(id, active) {
+  try { await api('PUT', '/api/admin/coupons/' + id, { active }); done(active ? 'Coupon enabled' : 'Coupon paused'); adminCoupons(); }
+  catch (e) { fail(e); }
+}
+async function delCoupon(id) {
+  const yes = await confirmModal({ title: 'Delete this coupon?', body: 'It will stop applying to carts and disappear from the discount box shown to shoppers.', okLabel: 'Delete coupon' });
+  if (!yes) return;
+  try { await api('DELETE', '/api/admin/coupons/' + id); done('Coupon deleted'); adminCoupons(); loadCart(); }
+  catch (e) { fail(e); }
+}
+
+async function adminReviews() {
+  const list = await api('GET', '/api/admin/reviews');
+  $('#ad').innerHTML = `
+    <p class="tiny">${list.length} review${list.length === 1 ? '' : 's'} across the catalogue &middot; ${list.filter(r => r.verified).length} from verified purchases</p>
+    ${list.length ? list.map(r => `
+      <div class="panel">
+        <div class="row wrap between" style="gap:10px">
+          <div class="row" style="gap:10px">
+            <span class="avatar">${avatarOf(r.name)}</span>
+            <div>
+              <b>${esc(r.name)}</b> ${r.verified ? '<span class="tag ok">Verified purchase</span>' : ''} <span class="tag">${esc(r.product?.name || 'deleted product')}</span>
+              <div class="tiny">${relTime(r.created)} &middot; ${stars(r.rating)}</div>
+            </div>
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn sm" onclick="delReview(${r.id},${r.pid})">Delete</button>
+          </div>
+        </div>
+        <b style="display:block;margin-top:8px">${esc(r.title)}</b>
+        <p class="mut" style="margin:4px 0 0">${esc(r.body)}</p>
+      </div>`).join('') : `<div class="empty"><span class="ee">\u{2B50}</span><h3>No reviews yet</h3><p>Customer reviews will appear here for moderation.</p></div>`}`;
+}
+
+/* ---------------------------------------------------------------------------
+ * 15. KEYBOARD, FOCUS MANAGEMENT AND BOOT
+ * ------------------------------------------------------------------------- */
+
+/* Modal focus trap: keep Tab inside the open dialog, restore focus on close. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const box = $('#ov .md');
+  if (!box) return;
+  const f = $$(FOCUSABLE, box).filter(el => el.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+/* Global shortcuts. Suppressed while typing in a field or while a dialog is open. */
+let chord = null, chordTimer = null;
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if ($('#ov')) return closeModal();
+    if ($('#drawer').classList.contains('open')) return toggleDrawer(false);
+    return;
+  }
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  if (chord) {
+    const key = e.key.toLowerCase(), g = chord;
+    chord = null; clearTimeout(chordTimer);
+    if (g === 'g') {
+      if (key === 's') { e.preventDefault(); go('shop'); }
+      if (key === 'o') { e.preventDefault(); go('orders'); }
+      if (key === 'w') { e.preventDefault(); go('wishlist'); }
+      if (key === 'a') { e.preventDefault(); go('addresses'); }
+    }
+    return;
+  }
+
+  if (typing || $('#ov')) return;
+
+  if (e.key === '/') { e.preventDefault(); $('#q').focus(); $('#q').select(); return; }
+  if (e.key === '?') { e.preventDefault(); helpModal(); return; }
+  if (e.key === 'g') { chord = 'g'; chordTimer = setTimeout(() => { chord = null; }, 1200); return; }
+
+  const k = e.key.toLowerCase();
+  if (k === 'c') { e.preventDefault(); toggleDrawer(); }
+  if (k === 'w') { e.preventDefault(); go('wishlist'); }
+  if (k === 't') { e.preventDefault(); toggleTheme(); }
+});
+
+$('#year').textContent = new Date().getFullYear();
+
+(async function boot() {
+  let theme = null;
+  try { theme = localStorage.getItem('se_theme'); } catch (e) {}
+  setTheme(theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+  try { const l = localStorage.getItem('se_layout'); if (l) S.filters.layout = l; } catch (e) {}
+
+  await seed();
+  try { S.coupons = await api('GET', '/api/coupons'); } catch (e) {}
+
+  if (sessionStorage.getItem('se_token')) {
+    try { S.user = await api('GET', '/api/auth/me'); }
+    catch (e) { sessionStorage.removeItem('se_token'); }
+  }
+
+  await Promise.all([loadCart(), loadWish(), loadRecent()]);
+  await render();
+  document.body.dataset.ready = '1';
+})();
+</script>
+</body>
+</html>
